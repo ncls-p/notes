@@ -108,23 +108,21 @@ The system SHALL:
 
 ### 4. Overall Architecture
 
-The application adopts a microservice-oriented architecture using Docker containers for each major component. The externalization of AI model hosting means users integrate their own AI services.
+The application adopts a consolidated architecture where the Next.js application serves both the frontend UI and the backend API logic. This is managed within a single Docker container for the Next.js app, simplifying deployment. Docker containers are still used for external services like the database. The externalization of AI model hosting remains: users integrate their own AI services.
 
 ```mermaid
 graph TD
-    A["User's Browser (Client)"] -- HTTP/S, WebSocket --> B["nginx-proxy (Reverse Proxy Container)"]
+    A["User's Browser (Client)"] -- HTTP/S, WebSocket --> B["nginx-proxy (Reverse Proxy Container - Optional)"]
 
     subgraph Docker Network
-        B -- HTTP/S (Frontend) --> C["nextjs-app (Frontend Container)"]
-        B -- HTTP/S (API) --> D["backend-api (Backend Container)"]
-        B -- WSS (Collaboration) --> D
+        B -- HTTP/S (Frontend & API), WSS (Collaboration) --> C["nextjs-app (Combined Frontend & Backend Container)"]
 
-        D -- SQL Queries --> E["postgres (DB Container with pgvector)"]
+        C -- SQL Queries --> E["postgres (DB Container with pgvector)"]
 
         subgraph "User-Provided AI Configuration & Interaction"
-            D -- Retrieves User's AI Config (from DB) --> E
-            E -- Encrypted API Keys & Config --> D
-            D -- Decrypts & Uses Config --> F["External AI Service (OpenAI, User's Ollama, Groq, Azure OpenAI, etc.)"]
+            C -- Retrieves User's AI Config (from DB) --> E
+            E -- Encrypted API Keys & Config --> C
+            C -- Decrypts & Uses Config --> F["External AI Service (OpenAI, User's Ollama, Groq, Azure OpenAI, etc.)"]
         end
 
         subgraph "Data Storage in PostgreSQL"
@@ -141,31 +139,28 @@ graph TD
     %% Styling
     classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;
     classDef proxy fill:#e6f3ff,stroke:#007bff,stroke-width:2px;
-    classDef frontend fill:#d4edda,stroke:#28a745,stroke-width:2px;
-    classDef backend fill:#fff3cd,stroke:#ffc107,stroke-width:2px;
+    classDef app fill:#d4edda,stroke:#28a745,stroke-width:2px;
     classDef db fill:#f8d7da,stroke:#dc3545,stroke-width:2px;
     classDef external fill:#e2e3e5,stroke:#6c757d,stroke-width:2px;
 
     class A default;
     class B proxy;
-    class C frontend;
-    class D backend;
+    class C app;
     class E db;
     class F external;
 ```
 
 **Core Services (Managed by `docker-compose.yml`):**
 
-- **nginx-proxy (Optional but Recommended for Production):** Handles SSL termination, serves static assets, and acts as a reverse proxy for the frontend and backend services.
-- **nextjs-app:** Frontend web application.
-- **backend-api:** Centralized API server, business logic, WebSocket server for real-time collaboration.
+- **nginx-proxy (Optional but Recommended for Production):** Handles SSL termination, serves static assets, and acts as a reverse proxy for the `nextjs-app`.
+- **nextjs-app:** Combined Frontend web application and Backend API server. Handles all UI, business logic, and WebSocket connections for real-time collaboration.
 - **postgres:** PostgreSQL database with pgvector extension.
 
 ---
 
 ### 5. Detailed Design
 
-**5.1. Frontend: `nextjs-app`**
+**5.1. Frontend: Logic within `nextjs-app`**
 
 - **Purpose:** User interface for all application features, including advanced Markdown editing, real-time collaboration, offline mode, and AI configuration.
 - **Technology Stack:**
@@ -174,10 +169,10 @@ graph TD
   - Styling: Tailwind CSS, Headless UI (or Radix UI) for accessible components.
   - Markdown Editor: CodeMirror 6 for advanced features, extensibility, and performance.
   - Markdown Renderer: `react-markdown` with `remark-gfm`, `rehype-sanitize` (configured for allowed tags/attributes), and custom plugins for diagrams (Mermaid.js, PlantUML client-side rendering or server-side generation) and syntax highlighting (`rehype-highlight`).
-  - HTTP Client: `Workspace` API (native) or a lightweight wrapper like `ky`.
+  - HTTP Client: `Workspace` API (native) or a lightweight wrapper like `ky`. API calls will be to relative paths like `/api/...`.
   - State Management: Zustand or Jotai for global state; React Context for localized state.
   - Voice Recording: Native browser `MediaRecorder` API.
-  - Real-time Collaboration: Yjs for CRDTs, with a WebSocket provider (e.g., `y-websocket` client) connecting to `backend-api`.
+  - Real-time Collaboration: Yjs for CRDTs, with a WebSocket provider (e.g., `y-websocket` client) connecting to the WebSocket endpoint on the `nextjs-app` itself (e.g., `/ws` or handled by a custom server integrated with Next.js).
   - Offline Mode: Service Workers for caching assets and API responses. IndexedDB (via a library like `Dexie.js`) for storing note data, Yjs state, and pending operations.
 - **Key Modules/Pages:**
   - Authentication (Login, Register, Password Reset)
@@ -193,32 +188,31 @@ graph TD
   - Offline/Online status indicator.
   - Sync status for offline changes (e.g., "Syncing...", "All changes saved").
   - Presence indicators for collaborative editing.
-- **Data Flow:** Client-side routing (Next.js App Router), form submissions, API calls to `backend-api`. WebSocket connections for real-time updates and collaboration.
+- **Data Flow:** Client-side routing (Next.js App Router), form submissions, API calls to internal Next.js API routes (`/api/...`). WebSocket connections for real-time updates and collaboration.
 
-**5.2. Backend: `backend-api`**
+**5.2. Backend Logic (within `nextjs-app`)**
 
-- **Purpose:** Core application logic, data persistence, dynamic AI service orchestration, real-time collaboration server, webhook dispatch.
+- **Purpose:** Core application logic, data persistence, dynamic AI service orchestration, real-time collaboration server, webhook dispatch. All implemented within the Next.js application structure using API Routes and potentially a custom server for advanced WebSocket handling.
 - **Technology Stack:**
-  - Runtime: Node.js
+  - Runtime: Node.js (as part of Next.js)
   - Language: TypeScript
-  - Web Framework: Fastify (for performance and plugin architecture).
-  - ORM/Query Builder: Prisma.
+  - API Framework: Next.js API Routes (App Router).
+  - ORM/QueryBuilder: Prisma.
   - Password Hashing: Argon2id (using a library like `argon2`).
-  - Authentication: `fastify-jwt` for JWT handling.
+  - Authentication: JWT handling (e.g., `jsonwebtoken`, `jose` libraries) within API routes.
   - Permission Management: CASL (or similar attribute-based access control library).
-  - File Uploads (for audio): `fastify-multipart`.
-  - PDF Generation: Puppeteer (run in a sandboxed environment).
+  - File Uploads (for audio): Handled by Next.js API routes (e.g., using `formidable` or similar).
+  - PDF Generation: Puppeteer (run in a sandboxed environment, dependencies included in the Next.js app's Docker image).
   - AI Orchestration: Langchain.js (for RAG pipeline construction), `axios` or `node-fetch` (for HTTP client communication with external AI services).
   - Encryption: Node.js `crypto` module (AES-256 GCM) for API key encryption.
-  - Real-time Collaboration: WebSockets (e.g., `fastify-websocket` with `y-websocket` server component) for Yjs integration, handling document synchronization and persistence of Yjs updates.
-  - Webhooks: Implement a webhook manager to dispatch events. Use a robust HTTP client for sending POST requests. Consider a queue (e.g., Redis-based like BullMQ) for reliable webhook delivery.
-  - Observability: Logging with Pino (Fastify's default, highly performant), metrics with `fastify-metrics` (Prometheus compatible), tracing with OpenTelemetry SDK.
+  - Real-time Collaboration: WebSockets. A WebSocket server (e.g., using `ws` package, compatible with `y-websocket` server component) integrated with Next.js. This may require a custom Next.js server (`server.js`) to manage WebSocket connections alongside Next.js request handling.
+  - Webhooks: Implement a webhook manager to dispatch events. Use a robust HTTP client for sending POST requests. Consider a queue (e.g., Redis-based like BullMQ, if an external Redis service is added) for reliable webhook delivery.
+  - Observability: Logging with Pino (or another structured logger compatible with Next.js), metrics collection (Prometheus compatible, e.g., via a custom server endpoint), tracing with OpenTelemetry SDK.
 - **Core Logic & Algorithms:**
-  - **Authentication & Authorization:** Standard JWT issuance and validation. CASL for granular permission checks on resources.
-  - **CRUD Operations:** Prisma for all database interactions.
+  - **Authentication & Authorization:** Standard JWT issuance and validation in API routes. CASL for granular permission checks on resources.
+  - **CRUD Operations:** Prisma for all database interactions, called from API routes.
   - **User AI Configuration Management:**
-    - Secure storage: Encryption of `api_key` using `APP_ENCRYPTION_KEY` before database persistence; decryption only when needed to make an API call.
-    - Model discovery (optional): Logic to call `/models` endpoint of user-configured AI services if available.
+    - Secure storage: Encryption of `api_key` using `APP_ENCRYPTION_KEY` before database persistence; decryption only when needed to make an API call. Logic resides in server-side modules.
   - **RAG Pipeline (using Langchain.js):**
     - A. **Document Ingestion & Indexing:**
       - Text Splitting: `RecursiveCharacterTextSplitter` or Markdown-aware splitter (e.g., `MarkdownTextSplitter` from Langchain) for chunking.
@@ -233,17 +227,16 @@ graph TD
       - Prompt Construction: Use Langchain's prompt templates to combine retrieved context, chat history, and user query.
       - LLM Inference: Call the user's selected chat API/model with the constructed prompt.
   - **Voice Transcription Integration:**
-    - Receive audio file (e.g., WebM, MP3 via `fastify-multipart`).
+    - Receive audio file (e.g., WebM, MP3 via `formidable`).
     - Call user's selected transcription API with the audio data.
     - Create a new note with transcribed text.
     - Trigger RAG indexing for the new note.
   - **Real-time Collaboration Logic (Yjs):**
-    - WebSocket Server: Handle client connections and Yjs protocol messages.
+    - WebSocket Server: Handle client connections and Yjs protocol messages. This would be part of the custom Next.js server setup.
     - Document State Management: Persist Yjs document updates efficiently to the database (e.g., periodically or on significant changes) to allow for recovery and asynchronous collaboration. Store full document state or deltas. The `notes.content_markdown` could store a serialized version of the Yjs document or the rendered Markdown. `notes.version` can be managed by Yjs or a separate mechanism if optimistic locking is also desired at the application level.
-    - Authentication: Secure WebSocket connections (e.g., using JWT passed during handshake).
+    - Authentication: Secure WebSocket connections (e.g., using JWT passed during handshake, verified by the custom server).
   - **AI Usage Tracking:**
-    - When `backend-api` makes an AI API call, parse the response (if provider includes token usage, e.g., OpenAI API) for input/output tokens.
-    - Record: `user_id`, `ai_config_id`, `model_id`, `request_type`, `input_tokens`, `output_tokens`, `timestamp` into `ai_usage_logs`. Cost estimation will be very approximate and may require user input for rates.
+    - When an API route makes an AI API call, parse the response (if provider includes token usage, e.g., OpenAI API) for input/output tokens.
   - **Webhook Management:**
     - API endpoints to create, read, update, delete webhook configurations.
     - Event Emitter: Internal event system to capture relevant actions (e.g., `note.created`, `note.updated`).
@@ -252,16 +245,16 @@ graph TD
     - On note save (especially non-collaborative or as a snapshot from Yjs), create a new version entry if content changes significantly.
     - Store diffs or full snapshots depending on storage/performance trade-offs.
 - **API Endpoints (Examples - RESTful where appropriate):**
-  - Auth: `/auth/register`, `/auth/login`, `/auth/refresh-token`, `/auth/recover-password`, `/auth/reset-password`
-  - Users: `/users/me`
-  - Folders: `/folders`, `/folders/{folderId}`
-  - Notes: `/notes`, `/notes/{noteId}`, `/notes/{noteId}/versions`, `/notes/{noteId}/versions/{versionId}`
-  - Sharing/Permissions: `/notes/{noteId}/share`, `/folders/{folderId}/share`, `/invitations`, `/invitations/{invitationId}/accept`
-  - AI: `/ai/chat`, `/ai/transcribe-voice`
-  - AI Configurations: `/ai-configs`, `/ai-configs/{configId}`, `/ai-configs/{configId}/models` (to list/test models)
-  - Webhooks: `/webhooks`, `/webhooks/{webhookId}`
-  - AI Usage: `/ai-usage-logs` (for user's own logs, admin view if applicable)
-  - WebSocket: `/ws` (for real-time collaboration)
+  - Auth: `/api/auth/register`, `/api/auth/login`, `/api/auth/refresh-token`, `/api/auth/recover-password`, `/api/auth/reset-password`
+  - Users: `/api/users/me`
+  - Folders: `/api/folders`, `/api/folders/{folderId}`
+  - Notes: `/api/notes`, `/api/notes/{noteId}`, `/api/notes/{noteId}/versions`, `/api/notes/{noteId}/versions/{versionId}`
+  - Sharing/Permissions: `/api/notes/{noteId}/share`, `/api/folders/{folderId}/share`, `/api/invitations`, `/api/invitations/{invitationId}/accept`
+  - AI: `/api/ai/chat`, `/api/ai/transcribe-voice`
+  - AI Configurations: `/api/ai-configs`, `/api/ai-configs/{configId}`, `/api/ai-configs/{configId}/models` (to list/test models)
+  - Webhooks: `/api/webhooks`, `/api/webhooks/{webhookId}`
+  - AI Usage: `/api/ai-usage-logs` (for user's own logs, admin view if applicable)
+  - WebSocket: `/ws` (path handled by the custom Next.js server for real-time collaboration)
 
 **5.3. Database: `postgres` with `pgvector`**
 
@@ -361,7 +354,7 @@ graph TD
 
 ### 6. Docker Compose Deployment
 
-The `docker-compose.yml` provides a streamlined setup. A reverse proxy like Nginx or Caddy is recommended in front for production (handling SSL, etc.) but not included in this basic setup for brevity.
+The `docker-compose.yml` provides a streamlined setup for the Next.js application and its PostgreSQL database. A reverse proxy like Nginx or Caddy is recommended in front for production (handling SSL, etc.) but not included in this basic setup for brevity.
 
 ```yaml
 version: "3.9"
@@ -378,60 +371,48 @@ services:
   #     - ./nginx/certs:/etc/nginx/certs:ro # For SSL certificates
   #   depends_on:
   #     - nextjs-app
-  #     - backend-api
 
-  # 1. Frontend: Next.js Application
+  # 1. Next.js Application (Frontend & Backend API)
   nextjs-app:
     build:
-      context: ./frontend
+      context: . # Assuming Dockerfile is at the root of the Next.js project
       dockerfile: Dockerfile
     ports:
       - "3000:3000" # Exposed directly or via reverse proxy
     environment:
-      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:3001/api} # Points to backend container API
-      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:3001} # WebSocket endpoint
-    depends_on:
-      - backend-api
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"] # Assuming a /health endpoint
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
-  # 2. Backend: Node.js/TypeScript API
-  backend-api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3001" # Expose backend API and WebSocket
-    environment:
+      # Frontend specific (can be prefixed with NEXT_PUBLIC_)
+      NEXT_PUBLIC_APP_NAME: "MyNotesApp"
+      # Backend specific (not prefixed with NEXT_PUBLIC_ unless needed by client)
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY} # For encrypting API keys and other sensitive data
-      # Webhook queue configuration (e.g., Redis URL if using BullMQ)
+      # Webhook queue configuration (e.g., Redis URL if using BullMQ and Redis service)
       # REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       # Logging/Metrics/Tracing config
       LOG_LEVEL: ${LOG_LEVEL:-info}
       NODE_ENV: ${NODE_ENV:-development}
+      # For Next.js custom server if used (e.g. for WebSockets)
+      PORT: ${PORT:-3000}
+      HOSTNAME: ${HOSTNAME:-localhost}
     depends_on:
       postgres:
         condition: service_healthy
       # redis: # If using Redis for queues/caching
       #   condition: service_healthy
     volumes:
-      - backend_app_data:/app/data # For temporary files, logs if not sent to stdout
+      - .:/app # Mount current directory for development; adjust for production
+      - /app/node_modules # Exclude node_modules from host mount
+      - /app/.next # Exclude .next from host mount
+      # - app_data:/app/data # For temporary files, logs if not sent to stdout and if needed
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"] # Assuming a /api/health endpoint
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"] # Assuming a /api/health endpoint
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
 
-  # 3. Database: PostgreSQL with pgvector
+  # 2. Database: PostgreSQL with pgvector
   postgres:
     image: pgvector/pgvector:pg16 # Pre-built image with pgvector for Postgres 16
     ports:
@@ -465,28 +446,26 @@ services:
 
 volumes:
   postgres_db_data:
-  backend_app_data:
+  # app_data: # If used for persistent application data outside of DB
   # redis_data:
 ```
 
 **Deployment Steps for v.0.1:**
 
-1.  **Project Setup:** Create `frontend` and `backend` directories with their respective `Dockerfiles` and initial project structures. Optionally, create an `nginx` directory for proxy configuration.
+1.  **Project Setup:** Ensure your Next.js project has a `Dockerfile`. If using a custom server for WebSockets, ensure it's correctly set up and used in the Dockerfile's CMD. Optionally, create an `nginx` directory for proxy configuration.
 2.  **Environment File:** Create a `.env` file at the project root (`./.env`) with variables like:
 
     ```env
     # General
     NODE_ENV=development # or production
     LOG_LEVEL=info
+    PORT=3000
+    HOSTNAME=localhost
 
-    # Backend API
+    # Next.js App (Backend Logic)
     DATABASE_URL="postgresql://notesuser:strongnotespassword@postgres:5432/notesdb"
     JWT_SECRET="your_very_strong_jwt_secret_here_at_least_64_chars_long_and_random"
     APP_ENCRYPTION_KEY="your_strong_32_byte_random_encryption_key_for_aes_256_gcm" # Must be exactly 32 chars (256 bits)
-
-    # Frontend
-    NEXT_PUBLIC_BACKEND_URL="http://localhost:3001/api" # Or your domain if using a proxy
-    NEXT_PUBLIC_WS_URL="ws://localhost:3001"          # Or your wss domain
 
     # PostgreSQL
     POSTGRES_USER="notesuser"
@@ -512,9 +491,9 @@ volumes:
 - **User API Key Encryption:**
   - Mechanism: AES-256 GCM using Node.js `crypto` module for authenticated symmetric encryption.
   - Key Management: `APP_ENCRYPTION_KEY` is critical. Store it as an environment variable, ideally injected via Docker secrets or a secure vault in production. Never commit to version control.
-- **Authentication & Authorization:** JWTs for stateless session management. Granular permissions via CASL (or similar) on all backend API endpoints and WebSocket channels.
+- **Authentication & Authorization:** JWTs for stateless session management. Granular permissions via CASL (or similar) on all Next.js API routes and WebSocket channels (if using custom server).
 - **Input Validation & Sanitization:**
-  - Validate all incoming data (body, params, query) using libraries like Zod or `fastify`'s built-in validation.
+  - Validate all incoming data (body, params, query) in API routes using libraries like Zod.
   - Sanitize Markdown content on the server-side before storage or rendering (if server-rendering parts of it) and potentially on the client-side (e.g., `rehype-sanitize` or DOMPurify) before rendering to prevent XSS.
 - **Rate Limiting:** Implement on authentication endpoints, API key configuration, and other sensitive or resource-intensive operations (e.g., using `fastify-rate-limit`).
 - **CSRF Protection:** For traditional form submissions if any (Next.js often uses client-side fetches which can be protected differently). If using cookies for auth, ensure `SameSite` attributes are set correctly. JWTs in headers are generally not susceptible if cookies aren't the primary auth mechanism.
@@ -536,13 +515,13 @@ volumes:
 
 - **Unit Tests:** (Jest, Vitest)
   - Frontend (React Testing Library): Test individual React components, utility functions, state management logic.
-  - Backend: Test individual modules, utility functions, API key encryption/decryption, permission logic (CASL rules), RAG pipeline components (chunking, prompt construction), CRDT/OT conflict resolution stubs.
-- **Integration Tests:** (Supertest for API, Vitest/Jest with DB test containers)
-  - Backend: Test API endpoints, interactions between services (`backend-api` with `postgres`), RAG pipeline flow with mock AI services or local Ollama. Test WebSocket connection and basic message passing. Test webhook triggering and signature generation with a mock receiver.
+  - Backend: Test individual server-side modules/utilities, API route handlers, API key encryption/decryption, permission logic (CASL rules), RAG pipeline components (chunking, prompt construction).
+- **Integration Tests:** (Supertest for API routes, Vitest/Jest with DB test containers)
+  - Backend: Test API routes, interactions between API logic and `postgres`, RAG pipeline flow with mock AI services or local Ollama. Test WebSocket connection (if custom server) and basic message passing. Test webhook triggering and signature generation with a mock receiver.
 - **End-to-End (E2E) Tests:** (Playwright, Cypress)
   - Simulate full user flows: registration, login, note creation/editing (including Markdown features), folder management, AI configuration, real-time collaboration sessions (multiple users), voice transcription, semantic search, offline mode activation/sync, webhook creation and event triggering.
 - **Performance Tests:** (k6, Artillery, Apache JMeter)
-  - Focus on `backend-api` throughput, `postgres` query performance (especially vector search), and WebSocket concurrency and message latency.
+  - Focus on `nextjs-app` throughput, `postgres` query performance (especially vector search), and WebSocket concurrency and message latency.
 - **Security Testing:**
   - Static Analysis Security Testing (SAST) tools.
   - Dynamic Analysis Security Testing (DAST) tools (e.g., OWASP ZAP).
@@ -555,20 +534,20 @@ volumes:
 
 ### 9. Risk Assessment
 
-| Risk Category     | Identified Risks                                                                                                 | Mitigation Strategies                                                                                                                                                                                                                                                                                                                    |
-| :---------------- | :--------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Technical**     | External AI API Latency/Downtime: App performance impacted by user's chosen AI providers.                        | Robust Error Handling: Implement retries with exponential backoff, circuit breakers, timeouts. Clear UI feedback if AI API is slow/unavailable. Caching: Cache embedding vectors. User Choice: Allow easy switching between configured AI APIs.                                                                                          |
-|                   | `pgvector` Performance Limits: Potential bottlenecks with extremely large datasets (e.g., >100M vectors).        | Monitor Performance: Database query monitoring. Proper Indexing: Ensure HNSW/IVFFlat index is optimized. Scalability Plan: Document potential for read replicas, sharding, or future migration to dedicated vector databases if necessary. Limit query scope where possible.                                                             |
-|                   | RAG Pipeline Complexity: Debugging issues in chunking, embedding accuracy, retrieval relevance, prompt crafting. | Modular Design: Isolate RAG components. Comprehensive Logging & Tracing: Detailed logs at each stage. Evaluation Framework: Develop an offline evaluation framework for RAG quality. Prompt Engineering: Version control prompts, allow A/B testing if possible.                                                                         |
-|                   | Real-time Collaboration Conflicts (Yjs): Data inconsistencies if Yjs persistence or network handling is flawed.  | Robust Yjs Implementation: Use established Yjs providers (`y-websocket`) and persistence patterns. Test thoroughly for edge cases (network interruptions, rapid conflicting edits). Version History: Supplement with note versions for manual rollback capability.                                                                       |
-|                   | Offline Sync Challenges: Data consistency, conflict resolution, large data sync.                                 | CRDT-based Sync: Leverage Yjs for conflict resolution. Clear Sync Logic: Incremental syncs. Robust Error Handling & UI Feedback: Inform users of sync status and any unresolved conflicts. Throttling/Batching: For large initial syncs or many pending changes. Rigorous testing of offline/online transitions.                         |
-|                   | PDF Generation Failures/Performance: Puppeteer can be resource-intensive.                                        | Asynchronous Processing: Generate PDFs in a background job. Resource Management: Limit concurrent PDF generation tasks. Error Handling: Graceful error reporting. Consider alternative lightweight PDF libraries if Puppeteer is overkill for simple Markdown.                                                                           |
-| **Security**      | Insecure Storage/Handling of User AI API Keys: Compromise leads to misuse of user's AI accounts.                 | Mandatory Encryption: AES-256 GCM for API keys at rest. Secure `APP_ENCRYPTION_KEY` via environment variables/Docker secrets. Decryption on Demand: Keys decrypted only in memory by `backend-api` when making requests. Least Privilege: Ensure backend processes handling keys have minimal necessary permissions. Audit key access.   |
-|                   | Webhook Abuse: SSRF if target URLs are not validated; DoS if many webhooks are triggered rapidly.                | URL Validation: Validate webhook target URLs (e.g., deny internal network IPs). Rate Limiting: Limit webhook creation and firing frequency. Asynchronous Dispatch: Use a queue for webhook processing to absorb bursts. User Responsibility: Educate users on securing their webhook endpoints.                                          |
-|                   | Inadequate Input Sanitization: XSS through Markdown or other user inputs.                                        | Strict Sanitization: Use robust libraries (e.g., DOMPurify client-side, `rehype-sanitize` server-side) with a tight allow-list for HTML in Markdown. Validate all inputs. Content Security Policy (CSP).                                                                                                                                 |
-| **Operational**   | Data Loss/Corruption: Database failure, bugs in sync logic.                                                      | Automated Backups: Regular, automated database backups (e.g., pg_dump) with tested restore procedures. Point-in-Time Recovery (PITR) if feasible. Data Integrity Checks.                                                                                                                                                                 |
-|                   | Scalability Bottlenecks: Any component (API, DB, WebSocket server) hitting limits under load.                    | Monitoring & Alerting: Proactive monitoring of resource usage and performance metrics. Horizontal Scaling: Design services (especially `backend-api`) to be stateless for easier scaling. Database Optimization: Query optimization, connection pooling, read replicas. Load Testing: Regular performance tests to identify bottlenecks. |
-| **User Adoption** | Complexity of AI Configuration: Users may find it difficult to set up their own AI providers.                    | Clear Documentation & UI/UX: Step-by-step guides, tooltips, pre-filled examples for common providers (Ollama, OpenAI). Test Connection Feature: Allow users to test their AI configuration from the UI. Community Support/Forums.                                                                                                        |
+| Risk Category     | Identified Risks                                                                                                 | Mitigation Strategies                                                                                                                                                                                                                                                                                                                                                                           |
+| :---------------- | :--------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Technical**     | External AI API Latency/Downtime: App performance impacted by user's chosen AI providers.                        | Robust Error Handling: Implement retries with exponential backoff, circuit breakers, timeouts. Clear UI feedback if AI API is slow/unavailable. Caching: Cache embedding vectors. User Choice: Allow easy switching between configured AI APIs.                                                                                                                                                 |
+|                   | `pgvector` Performance Limits: Potential bottlenecks with extremely large datasets (e.g., >100M vectors).        | Monitor Performance: Database query monitoring. Proper Indexing: Ensure HNSW/IVFFlat index is optimized. Scalability Plan: Document potential for read replicas, sharding, or future migration to dedicated vector databases if necessary. Limit query scope where possible.                                                                                                                    |
+|                   | RAG Pipeline Complexity: Debugging issues in chunking, embedding accuracy, retrieval relevance, prompt crafting. | Modular Design: Isolate RAG components. Comprehensive Logging & Tracing: Detailed logs at each stage. Evaluation Framework: Develop an offline evaluation framework for RAG quality. Prompt Engineering: Version control prompts, allow A/B testing if possible.                                                                                                                                |
+|                   | Real-time Collaboration Conflicts (Yjs): Data inconsistencies if Yjs persistence or network handling is flawed.  | Robust Yjs Implementation: Use established Yjs providers and persistence patterns. If using `y-websocket` with a custom Next.js server, ensure proper integration. Test thoroughly for edge cases (network interruptions, rapid conflicting edits). Version History: Supplement with note versions for manual rollback capability.                                                              |
+|                   | Offline Sync Challenges: Data consistency, conflict resolution, large data sync.                                 | CRDT-based Sync: Leverage Yjs for conflict resolution. Clear Sync Logic: Incremental syncs. Robust Error Handling & UI Feedback: Inform users of sync status and any unresolved conflicts. Throttling/Batching: For large initial syncs or many pending changes. Rigorous testing of offline/online transitions.                                                                                |
+|                   | PDF Generation Failures/Performance: Puppeteer can be resource-intensive.                                        | Asynchronous Processing: Generate PDFs in a background job/API route. Resource Management: Limit concurrent PDF generation tasks within Next.js server capabilities. Error Handling: Graceful error reporting. Consider alternative lightweight PDF libraries if Puppeteer is overkill for simple Markdown.                                                                                     |
+| **Security**      | Insecure Storage/Handling of User AI API Keys: Compromise leads to misuse of user's AI accounts.                 | Mandatory Encryption: AES-256 GCM for API keys at rest. Secure `APP_ENCRYPTION_KEY` via environment variables/Docker secrets. Decryption on Demand: Keys decrypted only in memory by server-side logic when making requests. Least Privilege: Ensure server-side processes handling keys have minimal necessary permissions. Audit key access.                                                  |
+|                   | Webhook Abuse: SSRF if target URLs are not validated; DoS if many webhooks are triggered rapidly.                | URL Validation: Validate webhook target URLs (e.g., deny internal network IPs) in API route logic. Rate Limiting: Limit webhook creation and firing frequency. Asynchronous Dispatch: Use a queue for webhook processing to absorb bursts (may require external service like Redis). User Responsibility: Educate users on securing their webhook endpoints.                                    |
+|                   | Inadequate Input Sanitization: XSS through Markdown or other user inputs.                                        | Strict Sanitization: Use robust libraries (e.g., DOMPurify client-side, `rehype-sanitize` server-side) with a tight allow-list for HTML in Markdown. Validate all inputs. Content Security Policy (CSP).                                                                                                                                                                                        |
+| **Operational**   | Data Loss/Corruption: Database failure, bugs in sync logic.                                                      | Automated Backups: Regular, automated database backups (e.g., pg_dump) with tested restore procedures. Point-in-Time Recovery (PITR) if feasible. Data Integrity Checks.                                                                                                                                                                                                                        |
+|                   | Scalability Bottlenecks: Any component (API, DB, WebSocket server) hitting limits under load.                    | Monitoring & Alerting: Proactive monitoring of resource usage and performance metrics. Horizontal Scaling: Design API routes to be stateless for easier scaling (Next.js default on serverless platforms, ensure for containerized deployments). Database Optimization: Query optimization, connection pooling, read replicas. Load Testing: Regular performance tests to identify bottlenecks. |
+| **User Adoption** | Complexity of AI Configuration: Users may find it difficult to set up their own AI providers.                    | Clear Documentation & UI/UX: Step-by-step guides, tooltips, pre-filled examples for common providers (Ollama, OpenAI). Test Connection Feature: Allow users to test their AI configuration from the UI (via an API route). Community Support/Forums.                                                                                                                                            |
 
 **AI Interaction Flow (Conceptual - RAG & Transcription Focus):**
 
@@ -578,10 +557,10 @@ graph TD
         U["User Initiates Action (Chat, Save Note, Upload Audio)"]
     end
 
-    U -- Chat Query / Note Content / Audio File --> B[Backend API]
+    U -- Chat Query / Note Content / Audio File --> App["Next.js App (API Routes and Server Logic)"]
 
-    subgraph "Backend API Processing"
-        B -- Determines Operation --> C{AI Operation Type?}
+    subgraph "Next.js App Processing"
+        App -- Determines Operation --> C{AI Operation Type?}
 
         C -- Chat Request --> ChatPath_Start
         C -- Note Create/Update (for Indexing) --> IndexingPath_Start
@@ -620,8 +599,8 @@ graph TD
         ChatPath_Start -- Failed Config --> Error["Error: Config Invalid/Unavailable"]
         IndexingPath_Start -- Failed Config --> Error["Error: Config Invalid/Unavailable"]
         TranscriptionPath_Start -- Failed Config --> Error["Error: Config Invalid/Unavailable"]
-        Error --> B
+        Error --> App
     end
 
-    B -- Response/Status --> U
+    App -- Response/Status --> U
 ```

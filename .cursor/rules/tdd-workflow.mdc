@@ -1,0 +1,16 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Test-Driven Development (TDD) Workflow
+
+When implementing any new feature or making changes to existing functionality, please adhere to the following Test-Driven Development process:
+
+1.  **Write a Test:** Before writing any implementation code, first write an automated test (or tests) that defines the desired behavior or improvement. This test should initially fail because the feature or fix is not yet implemented.
+2.  **Run All Tests:** Confirm that the new test fails and all other existing tests still pass. This ensures the new test is valid and doesn't accidentally pass due to an existing issue.
+3.  **Write the Code:** Write the minimum amount of code necessary to make the new test pass.
+4.  **Run All Tests Again:** Verify that all tests, including the new one, now pass.
+5.  **Refactor Code (Optional but Recommended):** Once the tests are passing, you can refactor the code to improve its structure, readability, and performance without changing its external behavior (as ensured by the tests). Run tests again after refactoring.
+
+This approach helps ensure that code is testable, requirements are clearly defined before implementation, and regressions are minimized.

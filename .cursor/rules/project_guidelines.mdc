@@ -1,0 +1,19 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Project Development Guidelines
+
+## Core Principles
+- **Clean Code & Clean Architecture:** Always strive for clean, readable, and maintainable code. Follow established principles of clean architecture.
+- **Component Reusability:** Before creating new UI elements, check if suitable components exist in `[components](mdc:components)`. Prioritize using or extending existing components. If no suitable component exists, create a new reusable component within this directory.
+- **Adherence to Design Documents:** All development actions, new features, and modifications must be in strict alignment with the specifications and requirements outlined in the `[Detailed Application Design (DAT.md)](mdc:DAT.md)` and the `[Project Backlog (BACKLOG.md)](mdc:BACKLOG.md)`.
+- **Backlog Maintenance:** The `[BACKLOG.md](mdc:BACKLOG.md)` must be kept up-to-date. All new tasks, changes in scope, or feature requests should be reflected in the backlog.
+
+## Workflow
+1. **check the current tree file to adapt**
+2.  **Consult DAT & Backlog:** Before starting any new task, review the `[DAT.md](mdc:DAT.md)` and `[BACKLOG.md](mdc:BACKLOG.md)` to understand the requirements and current project state.
+3.  **Check Components:** For UI-related tasks, explore `[components](mdc:components)` for reusable elements.
+4.  **Implement Cleanly:** Write code that is well-structured, commented where necessary (but avoid obvious comments), and follows project conventions.
+5.  **Update Backlog:** After completing tasks or when new tasks arise, update the `[BACKLOG.md](mdc:BACKLOG.md)` accordingly.
