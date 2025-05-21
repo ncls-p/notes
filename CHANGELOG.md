@@ -1,6 +1,11 @@
 ## [Unreleased]
 
 ### Added
+- User registration API route (`app/api/auth/register/route.ts`) ([BACKLOG.md: Task-UM-001.2]).
+- Prisma `User` model and migration for users table ([BACKLOG.md: Task-UM-001.1]).
+- Passing Jest test for user registration ([BACKLOG.md: Task-UM-001.2, Task-UM-001.11, Task-UM-001.13]).
+
+### Changed
 - Initial `Dockerfile` for Next.js application ([BACKLOG.md: Task-SETUP-001.3]).
 - Initial `docker-compose.yml` with `nextjs-app` and `postgres` (with pgvector) services ([BACKLOG.md: Task-SETUP-001.4]).
 - `.prettierrc.json` for code formatting ([BACKLOG.md: Task-SETUP-001.5]).
@@ -31,6 +36,10 @@
 - SETUP-001.6 (API, DB): Setup Prisma client and initial schema connection to PostgreSQL from Next.js app.
 - SETUP-001.7 (API): Implement basic health check API route in Next.js app (`/api/health`).
 - SETUP-001.9 (Test): Ensure basic `docker-compose up` brings all services online.
+- UM-001.1 (DB): Design and migrate `users` table schema.
+- UM-001.2 (API): Implement `/api/auth/register` API route.
+- UM-001.11 (Test): Unit test for registration logic.
+- UM-001.13 (Test): Integration test for `/api/auth/register` API route.
 
 ---
 

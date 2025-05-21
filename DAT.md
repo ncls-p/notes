@@ -17,7 +17,7 @@ The system SHALL:
 
 **2.1. User Management & Authentication**
 
-- **FR-UM-001:** Allow users to register new accounts securely (email, password).
+- **FR-UM-001:** Allow users to register new accounts securely (email, password). **[DONE]**
 - **FR-UM-002:** Authenticate users via login credentials and maintain secure sessions using JWTs.
 - **FR-UM-003:** Provide a mechanism for secure password recovery (e.g., email-based token).
 

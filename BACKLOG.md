@@ -34,8 +34,8 @@
 
 - **US-UM-001 (FR-UM-001):** As a new User, I want to register for an account using my email and a password so that I can access the application.
 
-  - **Task-UM-001.1 (DB):** Design and migrate `users` table schema (id, email, password_hash, timestamps).
-  - **Task-UM-001.2 (API):** Implement `/api/auth/register` API route.
+  - **Task-UM-001.1 (DB):** Design and migrate `users` table schema (id, email, password_hash, timestamps). **[DONE]**
+  - **Task-UM-001.2 (API):** Implement `/api/auth/register` API route. **[DONE]**
   - **Task-UM-001.3 (API):** Add input validation (email format, password strength policy) in the API route.
   - **Task-UM-001.4 (API):** Implement logic to check for existing email in the API route.
   - **Task-UM-001.5 (API):** Implement password hashing using Argon2id in the API route.
