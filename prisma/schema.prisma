@@ -16,6 +16,43 @@ model User {
   // Relations
   permissions      Permission[]
   sentInvitations  Invitation[]  @relation("SentInvitations")
+  notes            Note[]
+  folders          Folder[]
+}
+
+model Note {
+  id                 String    @id @default(uuid())
+  title              String
+  content_markdown   String?
+  folder_id          String?
+  owner_id           String
+  is_public          Boolean   @default(false)
+  public_share_token String?   @unique
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+  current_version_id String?
+  yjs_doc_state      Bytes?
+
+  // Relations
+  owner           User        @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  folder          Folder?     @relation(fields: [folder_id], references: [id])
+}
+
+model Folder {
+  id                 String    @id @default(uuid())
+  name               String
+  parent_folder_id   String?
+  owner_id           String
+  is_public          Boolean   @default(false)
+  public_share_token String?   @unique
+  created_at         DateTime  @default(now())
+  updated_at         DateTime  @updatedAt
+
+  // Relations
+  owner         User      @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  parent_folder Folder?   @relation("FolderToFolder", fields: [parent_folder_id], references: [id])
+  sub_folders   Folder[]  @relation("FolderToFolder")
+  notes         Note[]
 }
 
 model Permission {
