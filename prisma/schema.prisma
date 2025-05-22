@@ -8,9 +8,43 @@ datasource db {
 }
 
 model User {
+  id               String        @id @default(uuid())
+  email            String        @unique
+  password_hash    String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  // Relations
+  permissions      Permission[]
+  sentInvitations  Invitation[]  @relation("SentInvitations")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  user_id     String
+  entity_type String   // 'note' or 'folder'
+  entity_id   String
+  access_level String  // 'view' or 'edit'
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  // Unique constraint to ensure a user only has one permission record per entity
+  @@unique([user_id, entity_type, entity_id])
+}
+
+model Invitation {
   id            String   @id @default(uuid())
-  email         String   @unique
-  password_hash String
+  inviter_id    String
+  invitee_email String
+  entity_type   String   // 'note' or 'folder'
+  entity_id     String
+  access_level  String   // 'view' or 'edit'
+  status        String   @default("pending") // 'pending', 'accepted', 'declined'
+  token         String   @unique
+  expires_at    DateTime
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  inviter      User     @relation("SentInvitations", fields: [inviter_id], references: [id], onDelete: Cascade)
 }
