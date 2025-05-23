@@ -1,5 +1,8 @@
 # Use the official Node.js 23 LTS image as the base image
-FROM node:23-alpine AS base
+FROM node:23-slim AS base
+
+# Install OpenSSL and other required dependencies
+RUN apt-get update -y && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -13,11 +16,17 @@ RUN npm ci --legacy-peer-deps
 # Copy the rest of the application code
 COPY . .
 
+# Generate Prisma client for the container environment
+RUN npx prisma generate
+
 # Build the Next.js application
 RUN npm run build
 
 # Production image
-FROM node:23-alpine AS runner
+FROM node:23-slim AS runner
+
+# Install OpenSSL in the production image as well
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
