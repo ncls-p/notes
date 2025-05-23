@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       { id: user.id, email: user.email, createdAt: user.createdAt },
       { status: 201 }
     );
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

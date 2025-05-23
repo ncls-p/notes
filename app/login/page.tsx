@@ -64,7 +64,7 @@ export default function LoginPage() {
         }
         // Redirect will be handled in Task-UM-002.10
         console.log('Login successful, user:', result.user);
-        router.push('/dashboard');
+        router.push('/');
       }
     } catch (error) {
       console.error('Login submission error:', error);

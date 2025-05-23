@@ -66,7 +66,7 @@ async function refreshToken(): Promise<string | null> {
 }
 
 
-async function apiClient<T = any>(
+async function apiClient<T = unknown>(
   endpoint: string,
   options: ApiClientOptions = {}
 ): Promise<T> {
@@ -91,7 +91,7 @@ async function apiClient<T = any>(
     });
   };
 
-  let currentToken = getAccessToken();
+  const currentToken = getAccessToken();
   let response = await makeRequest(currentToken);
 
   if (response.status === 401 && !options.isRetry) {
@@ -127,10 +127,10 @@ async function apiClient<T = any>(
     let errorData;
     try {
       errorData = await response.json();
-    } catch (e) {
+    } catch (_e) {
       errorData = { message: response.statusText };
     }
-    const error = new Error(errorData.message || `API request to ${endpoint} failed with status ${response.status}`) as any;
+    const error = new Error(errorData.message || `API request to ${endpoint} failed with status ${response.status}`) as Error & { response?: Response; status?: number; data?: unknown };
     error.response = response;
     error.status = response.status;
     error.data = errorData;
