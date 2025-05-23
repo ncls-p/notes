@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,10 +16,18 @@ const loginFormSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
+// Import the token clearing function
+import { clearAuthTokens, setAccessToken } from '@/lib/apiClient';
+
 export default function LoginPage() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    // Clear any existing tokens when the login page loads
+    clearAuthTokens();
+  }, []);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -51,10 +59,8 @@ export default function LoginPage() {
         // The refresh token is set as an HttpOnly cookie by the server.
         // The access token should be stored in memory.
         if (result.accessToken) {
-          console.log('Access Token received:', result.accessToken);
-          // In a real app, you'd store this in a state management solution (e.g., Zustand, Jotai, React Context)
-          // For now, we're just logging it. A global state or context will be needed
-          // for other parts of the app to access this token for authenticated requests.
+          setAccessToken(result.accessToken); // Store the access token
+          console.log('Access Token stored.');
         }
         // Redirect will be handled in Task-UM-002.10
         console.log('Login successful, user:', result.user);

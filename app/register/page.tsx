@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,10 +26,18 @@ const registerFormSchema = z.object({
 
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
+// Import the token clearing function
+import { clearAuthTokens } from '@/lib/apiClient';
+
 export default function RegisterPage() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    // Clear any existing tokens when the register page loads
+    clearAuthTokens();
+  }, []);
 
   const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
