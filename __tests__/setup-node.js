@@ -1,5 +1,10 @@
 require('@testing-library/jest-dom');
 
+// Set essential environment variables for API tests
+process.env.JWT_SECRET = 'test-jwt-secret-for-api-tests';
+process.env.REFRESH_TOKEN_SECRET = 'test-refresh-token-secret-for-api-tests';
+process.env.NODE_ENV = 'test';
+
 // Polyfill globals needed for Next.js API routes testing
 const { TextEncoder, TextDecoder } = require('util');
 
@@ -48,6 +53,11 @@ class MockCookies {
   has(name) {
     return this._cookies.has(name);
   }
+
+  clear() {
+    this._cookies.clear();
+    return this;
+  }
 }
 
 // Mock Request and Response for Next.js API routes
@@ -72,38 +82,49 @@ global.Request = class Request {
 };
 
 global.Response = class Response {
-  constructor(body, init = {}) {
+  constructor(body = null, init = {}) {
     this.body = body;
     this.status = init.status || 200;
-    this.statusText = init.statusText || 'OK';
+    this.statusText = init.statusText || '';
     this.headers = new MockHeaders(Object.entries(init.headers || {}));
-    this.cookies = new MockCookies();
     this.ok = this.status >= 200 && this.status < 300;
+    this.redirected = false;
+    this.type = 'basic';
+    this.url = '';
+    this.cookies = new MockCookies();
   }
 
   async json() {
-    return typeof this.body === 'string' ? JSON.parse(this.body) : this.body;
+    if (typeof this.body === 'string') {
+      return JSON.parse(this.body);
+    }
+    return this.body;
   }
 
   async text() {
-    return typeof this.body === 'string' ? this.body : JSON.stringify(this.body);
-  }
-
-  // Add static json method like NextResponse
-  static json(data, init = {}) {
-    return new Response(JSON.stringify(data), {
-      ...init,
-      headers: {
-        'content-type': 'application/json',
-        ...init.headers,
-      },
-    });
+    if (typeof this.body === 'object') {
+      return JSON.stringify(this.body);
+    }
+    return String(this.body);
   }
 };
 
-// Mock NextResponse to use our Response class
-jest.mock('next/server', () => ({
-  NextResponse: global.Response,
+// Mock NextResponse that extends our Response
+const MockNextResponse = class NextResponse extends global.Response {
+  constructor(body, init) {
+    super(body, init);
+  }
+
+  static json(data, init = {}) {
+    const response = new MockNextResponse(data, init);
+    response.headers.set('content-type', 'application/json');
+    return response;
+  }
+};
+
+// Replace NextResponse with our mock for testing
+jest.doMock('next/server', () => ({
+  NextResponse: MockNextResponse,
   NextRequest: global.Request,
 }));
 

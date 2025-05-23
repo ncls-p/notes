@@ -54,7 +54,7 @@ describe('/api/auth/login POST', () => {
 
     expect(response.status).toBe(400);
     expect(json.error).toBe('Invalid input');
-    expect(json.details.email).toContain('Invalid email address'); // Zod default for missing required email
+    expect(json.details.email).toContain('Required'); // Zod default for missing required field
   });
 
   it('should return 400 for invalid input (invalid email format)', async () => {
@@ -74,7 +74,7 @@ describe('/api/auth/login POST', () => {
 
     expect(response.status).toBe(400);
     expect(json.error).toBe('Invalid input');
-    expect(json.details.password).toContain('Password is required');
+    expect(json.details.password).toContain('Required'); // Zod default for missing required field
   });
 
   it('should return 401 if user is not found', async () => {
@@ -88,7 +88,11 @@ describe('/api/auth/login POST', () => {
   });
 
   it('should return 401 if password_hash is missing on user object (edge case)', async () => {
-    (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({ id: '1', email: 'test@example.com', password_hash: null });
+    (mockPrisma.user.findUnique as jest.Mock).mockResolvedValue({
+      id: '1',
+      email: 'test@example.com',
+      password_hash: null,
+    });
     const req = mockRequest({ email: 'test@example.com', password: 'Password123!' });
     const response = await POST(req);
     const json = await response.json();
@@ -164,11 +168,9 @@ describe('/api/auth/login POST', () => {
       'test-jwt-secret',
       { expiresIn: '15m' }
     );
-    expect(jwt.sign).toHaveBeenCalledWith(
-      { userId: mockUser.id },
-      'test-refresh-token-secret',
-      { expiresIn: '7d' }
-    );
+    expect(jwt.sign).toHaveBeenCalledWith({ userId: mockUser.id }, 'test-refresh-token-secret', {
+      expiresIn: '7d',
+    });
   });
 
   it('should return 500 if Prisma throws an error', async () => {
