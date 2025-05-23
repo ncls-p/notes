@@ -17,10 +17,7 @@ export async function POST(request: NextRequest) {
     // Get user from auth token (middleware will verify JWT)
     const user = request.headers.get('user');
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = JSON.parse(user).id;
 
@@ -37,19 +34,13 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json(note, { status: 201 });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
-        { status: 400 }
-      );
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 });
     }
 
     console.error('Error creating note:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -58,10 +49,7 @@ export async function GET(request: NextRequest) {
     // Get user from auth token (middleware will verify JWT)
     const user = request.headers.get('user');
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = JSON.parse(user).id;
 
@@ -83,9 +71,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(notes);
   } catch (error) {
     console.error('Error fetching notes:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

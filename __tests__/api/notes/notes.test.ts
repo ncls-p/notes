@@ -1,35 +1,31 @@
+// Mock PrismaClient before importing anything else
+jest.mock('@prisma/client', () => {
+  const mockNote = {
+    create: jest.fn(),
+    findMany: jest.fn(),
+    findFirst: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  };
+
+  const mockPrismaInstance = {
+    note: mockNote,
+    $connect: jest.fn(),
+    $disconnect: jest.fn(),
+    $transaction: jest.fn(),
+  };
+
+  return {
+    PrismaClient: jest.fn().mockImplementation(() => mockPrismaInstance),
+  };
+});
+
 import { POST, GET } from '@/app/api/notes/route';
 import { NextRequest } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-// Mock the Prisma client module
-jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => ({
-    note: {
-      create: jest.fn(),
-      findMany: jest.fn(),
-    },
-  })),
-}));
-
-// Mock zod to avoid validation issues in testing
-jest.mock('zod', () => ({
-  z: {
-    object: jest.fn().mockReturnValue({
-      parse: jest.fn((data) => data), // Just return the data as-is
-    }),
-    string: jest.fn().mockReturnValue({
-      min: jest.fn().mockReturnThis(),
-      optional: jest.fn().mockReturnThis(),
-    }),
-  },
-  ZodError: class ZodError extends Error {
-    constructor(issues) {
-      super();
-      this.issues = issues;
-      this.errors = issues;
-    }
-  },
-}));
+// Get the mocked Prisma instance
+const mockPrisma = new PrismaClient();
 
 describe('/api/notes', () => {
   beforeEach(() => {
@@ -78,9 +74,7 @@ describe('/api/notes', () => {
       };
 
       // Mock the prisma create method
-      const { PrismaClient } = require('@prisma/client');
-      const prismaInstance = new PrismaClient();
-      prismaInstance.note.create.mockResolvedValue(mockNote);
+      (mockPrisma.note.create as jest.Mock).mockResolvedValue(mockNote);
 
       const req = createMockRequest({
         title: 'Test Note',
@@ -111,9 +105,7 @@ describe('/api/notes', () => {
     });
 
     it('should return 500 on database error', async () => {
-      const { PrismaClient } = require('@prisma/client');
-      const prismaInstance = new PrismaClient();
-      prismaInstance.note.create.mockRejectedValue(new Error('Database error'));
+      (mockPrisma.note.create as jest.Mock).mockRejectedValue(new Error('Database error'));
 
       const req = createMockRequest({
         title: 'Test Note',
@@ -142,9 +134,7 @@ describe('/api/notes', () => {
         },
       ];
 
-      const { PrismaClient } = require('@prisma/client');
-      const prismaInstance = new PrismaClient();
-      prismaInstance.note.findMany.mockResolvedValue(mockNotes);
+      (mockPrisma.note.findMany as jest.Mock).mockResolvedValue(mockNotes);
 
       const req = createMockRequest({});
 
@@ -166,9 +156,7 @@ describe('/api/notes', () => {
     });
 
     it('should return 500 on database error', async () => {
-      const { PrismaClient } = require('@prisma/client');
-      const prismaInstance = new PrismaClient();
-      prismaInstance.note.findMany.mockRejectedValue(new Error('Database error'));
+      (mockPrisma.note.findMany as jest.Mock).mockRejectedValue(new Error('Database error'));
 
       const req = createMockRequest({});
 
@@ -180,9 +168,7 @@ describe('/api/notes', () => {
     });
 
     it('should return empty array when no notes found', async () => {
-      const { PrismaClient } = require('@prisma/client');
-      const prismaInstance = new PrismaClient();
-      prismaInstance.note.findMany.mockResolvedValue([]);
+      (mockPrisma.note.findMany as jest.Mock).mockResolvedValue([]);
 
       const req = createMockRequest({});
 

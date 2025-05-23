@@ -219,5 +219,17 @@ jest.mock('next/navigation', () => ({
   notFound: jest.fn(),
 }));
 
+// Configure Zod to use its actual implementation for tests
+// This ensures that schema.parse() throws real ZodErrors.
+const actualZod = jest.requireActual('zod');
+
+jest.mock('zod', () => {
+  // We want to use the actual Zod implementation for 'z' and 'ZodError'
+  // to ensure that validation logic and instanceof checks work correctly.
+  // Other parts of Zod that might be less critical for tests could be mocked
+  // if they caused issues, but usually, using actualZod entirely is safest for validation testing.
+  return actualZod;
+});
+
 // This file is for Jest Node.js environment setup.
 // You can add other global Node.js-specific configurations or mocks here if needed.

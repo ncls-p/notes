@@ -12,18 +12,12 @@ const updateNoteSchema = z.object({
 
 type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { noteId: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { noteId: string } }) {
   try {
     // Get user from auth token (middleware will verify JWT)
     const user = request.headers.get('user');
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = JSON.parse(user).id;
 
@@ -37,43 +31,31 @@ export async function GET(
           {
             permissions: {
               some: {
-                user_id: userId
-              }
-            }
-          }
-        ]
-      }
+                user_id: userId,
+              },
+            },
+          },
+        ],
+      },
     });
 
     if (!note) {
-      return NextResponse.json(
-        { error: 'Note not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
     }
 
     return NextResponse.json(note);
   } catch (error) {
     console.error('Error fetching note:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { noteId: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: { noteId: string } }) {
   try {
     // Get user from auth token (middleware will verify JWT)
     const user = request.headers.get('user');
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = JSON.parse(user).id;
 
@@ -91,19 +73,16 @@ export async function PUT(
             permissions: {
               some: {
                 user_id: userId,
-                access_level: 'edit'
-              }
-            }
-          }
-        ]
-      }
+                access_level: 'edit',
+              },
+            },
+          },
+        ],
+      },
     });
 
     if (!note) {
-      return NextResponse.json(
-        { error: 'Note not found or permission denied' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Note not found or permission denied' }, { status: 404 });
     }
 
     // Update note
@@ -113,34 +92,22 @@ export async function PUT(
     });
 
     return NextResponse.json(updatedNote);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
-        { status: 400 }
-      );
+  } catch (error: any) {
+    if (error.name === 'ZodError') {
+      return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 });
     }
 
     console.error('Error updating note:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { noteId: string } }
-) {
+export async function DELETE(request: NextRequest, { params }: { params: { noteId: string } }) {
   try {
     // Get user from auth token (middleware will verify JWT)
     const user = request.headers.get('user');
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = JSON.parse(user).id;
 
@@ -148,31 +115,22 @@ export async function DELETE(
     const note = await prisma.note.findFirst({
       where: {
         id: params.noteId,
-        owner_id: userId
-      }
+        owner_id: userId,
+      },
     });
 
     if (!note) {
-      return NextResponse.json(
-        { error: 'Note not found or permission denied' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Note not found or permission denied' }, { status: 404 });
     }
 
     // Delete note
     await prisma.note.delete({
-      where: { id: params.noteId }
+      where: { id: params.noteId },
     });
 
-    return NextResponse.json(
-      { message: 'Note deleted successfully' },
-      { status: 200 }
-    );
+    return NextResponse.json({ message: 'Note deleted successfully' }, { status: 200 });
   } catch (error) {
     console.error('Error deleting note:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
