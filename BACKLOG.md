@@ -23,16 +23,16 @@ This section outlines the essential features required for the initial, usable ve
 ### MVP-EPIC-01: Project Setup & Core Infrastructure (Foundation)
 
 - **US-SETUP-001:** As a Developer, I want a basic project structure for a unified Next.js application (frontend and backend) so that development can begin in an organized manner.
-  - **Task-SETUP-001.1 (Infra):** Initialize Git repository with appropriate `.gitignore` for a Next.js project.
-  - **Task-SETUP-001.2 (FE/API):** Setup Next.js project (App Router, TypeScript, Tailwind CSS).
-  - **Task-SETUP-001.3 (Infra):** Create initial `Dockerfile` for the Next.js application.
-  - **Task-SETUP-001.4 (DB):** Define initial `docker-compose.yml` with `nextjs-app` and `postgres` services. (pgvector can be included now, but not actively used by MVP features).
-  - **Task-SETUP-001.5 (Infra):** Configure basic linting, formatting (ESLint, Prettier) for the Next.js project.
-  - **Task-SETUP-001.6 (API, DB):** Setup Prisma client and initial schema connection to PostgreSQL from Next.js app.
-  - **Task-SETUP-001.7 (API):** Implement basic health check API route in Next.js app (e.g., `/api/health`).
-  - **Task-SETUP-001.8 (FE):** Implement basic health check page/route in Next.js app (e.g., `/health`) that calls the `/api/health` route.
-  - **Task-SETUP-001.9 (Test):** Ensure basic `docker-compose up` brings all services online.
-  - **Task-SETUP-001.10 (Docs):** Document initial project setup and how to run locally.
+  - **Task-SETUP-001.1 (Infra):** Initialize Git repository with appropriate `.gitignore` for a Next.js project. **[DONE]**
+  - **Task-SETUP-001.2 (FE/API):** Setup Next.js project (App Router, TypeScript, Tailwind CSS). **[DONE]**
+  - **Task-SETUP-001.3 (Infra):** Create initial `Dockerfile` for the Next.js application. **[DONE]**
+  - **Task-SETUP-001.4 (DB):** Define initial `docker-compose.yml` with `nextjs-app` and `postgres` services. (pgvector can be included now, but not actively used by MVP features). **[DONE]**
+  - **Task-SETUP-001.5 (Infra):** Configure basic linting, formatting (ESLint, Prettier) for the Next.js project. **[DONE]**
+  - **Task-SETUP-001.6 (API, DB):** Setup Prisma client and initial schema connection to PostgreSQL from Next.js app. **[DONE]**
+  - **Task-SETUP-001.7 (API):** Implement basic health check API route in Next.js app (e.g., `/api/health`). **[DONE]**
+  - **Task-SETUP-001.8 (FE):** Implement basic health check page/route in Next.js app (e.g., `/health`) that calls the `/api/health` route. **[DONE]**
+  - **Task-SETUP-001.9 (Test):** Ensure basic `docker-compose up` brings all services online. **[DONE]**
+  - **Task-SETUP-001.10 (Docs):** Document initial project setup and how to run locally. **[DONE]**
 
 ---
 
@@ -41,36 +41,36 @@ This section outlines the essential features required for the initial, usable ve
 - **US-UM-001 (FR-UM-001):** As a new User, I want to register for an account using my email and a password so that I can access the application.
   - **Task-UM-001.1 (DB):** Design and migrate `users` table schema (id, email, password_hash, timestamps). **[DONE]**
   - **Task-UM-001.2 (API):** Implement `/api/auth/register` API route. **[DONE]**
-  - **Task-UM-001.3 (API):** Add input validation (email format, password strength policy) in the API route.
-  - **Task-UM-001.4 (API):** Implement logic to check for existing email in the API route.
-  - **Task-UM-001.5 (API):** Implement password hashing using Argon2id in the API route.
-  - **Task-UM-001.6 (API, DB):** Store new user in the database via Prisma from the API route.
-  - **Task-UM-001.7 (FE):** Create Registration page/form UI (email, password, confirm password).
-  - **Task-UM-001.8 (FE):** Implement client-side validation for registration form.
-  - **Task-UM-001.9 (FE):** Implement API call to `/api/auth/register`.
-  - **Task-UM-001.10 (FE):** Handle success (e.g., redirect to login) and error responses.
-  - **Task-UM-001.11 (Test):** Unit tests for API registration logic (validation, hashing, conflicts).
-  - **Task-UM-001.12 (Test):** Unit tests for FE registration form (validation, submission).
-  - **Task-UM-001.13 (Test):** Integration test for `/api/auth/register` API route.
-  - **Task-UM-001.14 (Test):** E2E test for the full registration flow.
-  - **Task-UM-001.15 (Docs):** Document `/api/auth/register` API route.
+  - **Task-UM-001.3 (API):** Add input validation (email format, password strength policy) in the API route. **[DONE]**
+  - **Task-UM-001.4 (API):** Implement logic to check for existing email in the API route. **[DONE]**
+  - **Task-UM-001.5 (API):** Implement password hashing using Argon2id in the API route. **[DONE]**
+  - **Task-UM-001.6 (API, DB):** Store new user in the database via Prisma from the API route. **[DONE]**
+  - **Task-UM-001.7 (FE):** Create Registration page/form UI (email, password, confirm password). **[DONE]**
+  - **Task-UM-001.8 (FE):** Implement client-side validation for registration form. **[DONE]**
+  - **Task-UM-001.9 (FE):** Implement API call to `/api/auth/register`. **[DONE]**
+  - **Task-UM-001.10 (FE):** Handle success (e.g., redirect to login) and error responses. **[DONE]**
+  - **Task-UM-001.11 (Test):** Unit tests for API registration logic (validation, hashing, conflicts). **[DONE]**
+  - **Task-UM-001.12 (Test):** Unit tests for FE registration form (validation, submission). **[DONE]**
+  - **Task-UM-001.13 (Test):** Integration test for `/api/auth/register` API route. **[DONE]**
+  - **Task-UM-001.14 (Test):** E2E test for the full registration flow. **[DONE]**
+  - **Task-UM-001.15 (Docs):** Document `/api/auth/register` API route. **[DONE]**
 
 - **US-UM-002 (FR-UM-002):** As a registered User, I want to log in with my email and password so that I can access my notes and application features.
-  - **Task-UM-002.1 (API):** Implement `/api/auth/login` API route.
-  - **Task-UM-002.2 (API):** Add input validation for login credentials in the API route.
-  - **Task-UM-002.3 (API, DB):** Retrieve user by email and verify password hash (Argon2id) in the API route.
-  - **Task-UM-002.4 (API):** Generate JWT (access token, refresh token) upon successful login in the API route.
-  - **Task-UM-002.5 (API):** Configure JWT library (e.g., `jsonwebtoken` or `jose`) with appropriate secrets and expiry times within Next.js API logic.
-  - **Task-UM-002.6 (FE):** Create Login page/form UI.
-  - **Task-UM-002.7 (FE):** Implement client-side validation for login form.
-  - **Task-UM-002.8 (FE):** Implement API call to `/api/auth/login`.
-  - **Task-UM-002.9 (FE):** Securely store JWTs (e.g., access token in memory, refresh token in HttpOnly cookie).
-  - **Task-UM-002.10 (FE):** Implement redirect to dashboard/notes upon successful login.
-  - **Task-UM-002.11 (FE):** Handle login errors (invalid credentials, etc.).
-  - **Task-UM-002.12 (Test):** Unit tests for API login logic.
-  - **Task-UM-002.13 (Test):** Integration test for `/api/auth/login` API route.
-  - **Task-UM-002.14 (Test):** E2E test for the login flow.
-  - **Task-UM-002.15 (Docs):** Document `/api/auth/login` API route.
+  - **Task-UM-002.1 (API):** Implement `/api/auth/login` API route. **[DONE]**
+  - **Task-UM-002.2 (API):** Add input validation for login credentials in the API route. **[DONE]**
+  - **Task-UM-002.3 (API, DB):** Retrieve user by email and verify password hash (Argon2id) in the API route. **[DONE]**
+  - **Task-UM-002.4 (API):** Generate JWT (access token, refresh token) upon successful login in the API route. **[DONE]**
+  - **Task-UM-002.5 (API):** Configure JWT library (e.g., `jsonwebtoken` or `jose`) with appropriate secrets and expiry times within Next.js API logic. **[DONE]**
+  - **Task-UM-002.6 (FE):** Create Login page/form UI. **[DONE]**
+  - **Task-UM-002.7 (FE):** Implement client-side validation for login form. **[DONE]**
+  - **Task-UM-002.8 (FE):** Implement API call to `/api/auth/login`. **[DONE]**
+  - **Task-UM-002.9 (FE):** Securely store JWTs (e.g., access token in memory, refresh token in HttpOnly cookie). **[DONE]**
+  - **Task-UM-002.10 (FE):** Implement redirect to dashboard/notes upon successful login. **[DONE]**
+  - **Task-UM-002.11 (FE):** Handle login errors (invalid credentials, etc.). **[DONE]**
+  - **Task-UM-002.12 (Test):** Unit tests for API login logic. **[DONE]**
+  - **Task-UM-002.13 (Test):** Integration test for `/api/auth/login` API route. **[DONE]**
+  - **Task-UM-002.14 (Test):** E2E test for the login flow. **[DONE]**
+  - **Task-UM-002.15 (Docs):** Document `/api/auth/login` API route. **[DONE]**
 
 - **US-UM-003:** As an authenticated User, I want the application to maintain my session so that I don't have to log in repeatedly.
   - **Task-UM-003.1 (API):** Implement JWT authentication middleware/helper for protected API routes in Next.js.

@@ -1,22 +1,31 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { createHash } from 'crypto';
+import { hash } from 'argon2';
+import { z } from 'zod';
 
 const prisma = new PrismaClient();
 
+const passwordValidation = new RegExp(
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]).{8,}$/
+);
+
+const registerSchema = z.object({
+  email: z.string().email({ message: 'Invalid email address' }),
+  password: z.string().min(8, { message: 'Password must be at least 8 characters long' }).regex(passwordValidation, {
+    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+  })
+});
+
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json();
+    const validation = registerSchema.safeParse(body);
 
-    // Basic input validation
-    if (
-      typeof email !== 'string' ||
-      typeof password !== 'string' ||
-      !email.match(/^[^@]+@[^@]+\.[^@]+$/) ||
-      password.length < 8
-    ) {
-      return NextResponse.json({ error: 'Invalid email or password' }, { status: 400 });
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Invalid input', details: validation.error.flatten().fieldErrors }, { status: 400 });
     }
+
+    const { email, password } = validation.data;
 
     // Check for existing user
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -24,8 +33,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
     }
 
-    // Hash password (using Node.js crypto as placeholder; replace with Argon2id in production)
-    const password_hash = createHash('sha256').update(password).digest('hex');
+    // Hash password
+    const password_hash = await hash(password);
 
     const user = await prisma.user.create({
       data: { email, password_hash }

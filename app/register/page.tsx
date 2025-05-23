@@ -9,59 +9,62 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-const loginFormSchema = z.object({
+const passwordValidation = new RegExp(
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]).{8,}$/
+);
+
+const registerFormSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
-  password: z.string().min(1, { message: 'Password is required' }),
+  password: z.string().min(8, { message: 'Password must be at least 8 characters long' }).regex(passwordValidation, {
+    message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+  }),
+  confirmPassword: z.string().min(1, { message: 'Please confirm your password' })
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"], // path of error
 });
 
-type LoginFormValues = z.infer<typeof loginFormSchema>;
+type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginFormSchema),
+  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerFormSchema),
   });
 
-  const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
+  const onSubmit: SubmitHandler<RegisterFormValues> = async (data) => {
     setApiError(null);
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: data.email, password: data.password }),
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
-        if (result.details) {
-          // Handle detailed validation errors (though Zod on client-side should catch most)
-          const errorMessages = Object.values(result.details).flat().join(' ');
-          setApiError(errorMessages || result.error || 'Login failed. Please try again.');
-        } else {
-          setApiError(result.error || 'Login failed. Please try again.');
+        const errorData = await response.json();
+        setApiError(errorData.error || 'Registration failed. Please try again.');
+        if (errorData.details) {
+          // Optionally, you could try to map these to form errors
+          // For now, just log them or show a generic part of them
+          console.error('Validation details:', errorData.details);
+          let detailedMessages = '';
+          if (errorData.details.email) detailedMessages += `Email: ${errorData.details.email.join(', ')}. `;
+          if (errorData.details.password) detailedMessages += `Password: ${errorData.details.password.join(', ')}. `;
+          if (detailedMessages) setApiError(prev => `${prev} ${detailedMessages.trim()}`);
         }
       } else {
-        // Login successful
-        // Token storage will be handled in Task-UM-002.9
-        // The refresh token is set as an HttpOnly cookie by the server.
-        // The access token should be stored in memory.
-        if (result.accessToken) {
-          console.log('Access Token received:', result.accessToken);
-          // In a real app, you'd store this in a state management solution (e.g., Zustand, Jotai, React Context)
-          // For now, we're just logging it. A global state or context will be needed
-          // for other parts of the app to access this token for authenticated requests.
-        }
-        // Redirect will be handled in Task-UM-002.10
-        console.log('Login successful, user:', result.user);
-        router.push('/dashboard');
+        // Handle success (Task-UM-001.10)
+        router.push('/login');
       }
     } catch (error) {
-      console.error('Login submission error:', error);
+      console.error('Registration request failed:', error);
       setApiError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -72,14 +75,14 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-100 dark:bg-gray-900">
       <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md dark:bg-gray-800">
         <h1 className="mb-6 text-center text-3xl font-bold text-gray-900 dark:text-white">
-          Log In
+          Create Account
         </h1>
         {apiError && (
           <div className="mb-4 rounded-md bg-red-100 p-3 text-center text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
             {apiError}
           </div>
         )}
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4"> {/* Reduced space-y for tighter error messages */}
           <div>
             <Label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Email address
@@ -101,35 +104,43 @@ export default function LoginPage() {
             <Input
               id="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               {...register('password')}
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               placeholder="••••••••"
             />
             {errors.password && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password.message}</p>}
           </div>
-          <div className="pt-2">
+          <div>
+            <Label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Confirm Password
+            </Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              {...register('confirmPassword')}
+              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm ${errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+              placeholder="••••••••"
+            />
+            {errors.confirmPassword && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.confirmPassword.message}</p>}
+          </div>
+          <div className="pt-2"> {/* Added padding-top to button div for better spacing */}
             <Button
               type="submit"
               disabled={loading}
               className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
             >
-              {loading ? 'Logging In...' : 'Log In'}
+              {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </div>
         </form>
         <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-          Don't have an account?{' '}
-          <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
-            Sign up
+          Already have an account?{' '}
+          <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+            Log in
           </a>
         </p>
-        {/* Optional: Add "Forgot Password?" link later (Task-UM-004) */}
-        {/* <p className="mt-2 text-center text-sm">
-          <a href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
-            Forgot your password?
-          </a>
-        </p> */}
       </div>
     </div>
   );
