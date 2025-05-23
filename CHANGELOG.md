@@ -34,3 +34,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration tests for the `/api/auth/login` API route. (Implements `Task-UM-002.13`)
 - E2E test for the full user login flow, including success and failure scenarios. (Implements `Task-UM-002.14`)
 - Documented the `/api/auth/login` API endpoint in `README.md`. (Implements `Task-UM-002.15`)
+### Fixed
+- Resolved Next.js build conflict between Turbopack/Babel and `next/font` when a custom `babel.config.js` is present. This involved:
+  - Removing the `--turbopack` flag from the `dev` script in `package.json`.
+  - Creating `babel.jest.config.js` for Jest's Babel transformations.
+  - Updating `jest.config.js` to use `babel.jest.config.js`.
+  - Removing the original `babel.config.js` to allow Next.js to default to SWC, resolving `next/font` issues.
+- Corrected Tailwind CSS setup to resolve "unknown utility class" errors (e.g., `border-border`). This involved:
+  - Creating a `tailwind.config.ts` file with a Shadcn UI compatible configuration.
+  - Updating `app/globals.css` with the necessary Shadcn UI CSS variables for theming and removing problematic base styles.
+
+### Changed
+- Replaced the previously empty `app/page.tsx` with a new, modern, and responsive landing page.
+  - The new landing page utilizes Shadcn UI components (`Card`, `Button`, etc.) and features improved styling with a gradient background, enhanced typography, and icons.
+  - Content for the landing page is inspired by `README.md`.
