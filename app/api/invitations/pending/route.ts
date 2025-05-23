@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { verify } from 'jsonwebtoken';
-import { authMiddleware } from '@/lib/auth/middleware';
 
 const prisma = new PrismaClient();
 
@@ -15,28 +14,35 @@ interface JwtPayload {
 // GET /api/invitations/pending - List pending invitations for the authenticated user
 export async function GET(request: NextRequest) {
   // Check authentication
-  const authResult = await authMiddleware(request, 'read', 'Invitation');
-  if (authResult) return authResult;
-  
+  const authHeader = request.headers.get('Authorization');
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Unauthorized: Missing or invalid token' }, { status: 401 });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
+  }
+
   try {
-    // Extract token and get user email
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader!.split(' ')[1];
+    // Verify token and get user email
     const payload = verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    
+
     // Get user details
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: { email: true }
     });
-    
+
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
-    
+
     // Find pending invitations for the user's email
     const pendingInvitations = await prisma.invitation.findMany({
       where: {
@@ -58,7 +64,7 @@ export async function GET(request: NextRequest) {
         createdAt: 'desc'
       }
     });
-    
+
     // Format the response
     const formattedInvitations = pendingInvitations.map(invitation => ({
       id: invitation.id,
@@ -72,9 +78,9 @@ export async function GET(request: NextRequest) {
         email: invitation.inviter.email
       }
     }));
-    
+
     return NextResponse.json(formattedInvitations);
-    
+
   } catch (error) {
     console.error('Error listing pending invitations:', error);
     return NextResponse.json(

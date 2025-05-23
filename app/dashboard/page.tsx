@@ -1,8 +1,6 @@
 'use client';
 
-import { AuthWrapper } from '@/components/auth/AuthWrapper';
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/lib/auth/store';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { PlusIcon } from 'lucide-react';
@@ -17,7 +15,6 @@ interface Note {
 export default function DashboardPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [error, setError] = useState('');
-  const { user } = useAuth();
 
   useEffect(() => {
     fetchNotes();
@@ -61,7 +58,6 @@ export default function DashboardPage() {
   };
 
   return (
-    <AuthWrapper>
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">My Notes</h1>
@@ -97,6 +93,5 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
-    </AuthWrapper>
   );
 }

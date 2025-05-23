@@ -12,7 +12,8 @@ const updateNoteSchema = z.object({
 
 type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
 
-export async function GET(request: NextRequest, { params }: { params: { noteId: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ noteId: string }> }) {
+  const params = await context.params;
   try {
     // Get user from auth token (middleware will verify JWT)
     const user = request.headers.get('user');
@@ -22,25 +23,30 @@ export async function GET(request: NextRequest, { params }: { params: { noteId: 
     const userId = JSON.parse(user).id;
 
     // Fetch note
-    const note = await prisma.note.findFirst({
-      where: {
-        id: params.noteId,
-        OR: [
-          { owner_id: userId },
-          { is_public: true },
-          {
-            permissions: {
-              some: {
-                user_id: userId,
-              },
-            },
-          },
-        ],
-      },
+    const note = await prisma.note.findUnique({
+      where: { id: params.noteId },
     });
 
     if (!note) {
       return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+    }
+
+    // Check if user has access
+    const hasAccess = note.owner_id === userId || note.is_public;
+
+    if (!hasAccess) {
+      // Check permissions table
+      const permission = await prisma.permission.findFirst({
+        where: {
+          user_id: userId,
+          entity_type: 'note',
+          entity_id: params.noteId,
+        },
+      });
+
+      if (!permission) {
+        return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+      }
     }
 
     return NextResponse.json(note);
@@ -50,7 +56,8 @@ export async function GET(request: NextRequest, { params }: { params: { noteId: 
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { noteId: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ noteId: string }> }) {
+  const params = await context.params;
   try {
     // Get user from auth token (middleware will verify JWT)
     const user = request.headers.get('user');
@@ -63,26 +70,32 @@ export async function PUT(request: NextRequest, { params }: { params: { noteId: 
     const body = await request.json();
     const validatedData = updateNoteSchema.parse(body);
 
-    // Check if user has permission to edit
-    const note = await prisma.note.findFirst({
-      where: {
-        id: params.noteId,
-        OR: [
-          { owner_id: userId },
-          {
-            permissions: {
-              some: {
-                user_id: userId,
-                access_level: 'edit',
-              },
-            },
-          },
-        ],
-      },
+    // Check if note exists
+    const note = await prisma.note.findUnique({
+      where: { id: params.noteId },
     });
 
     if (!note) {
-      return NextResponse.json({ error: 'Note not found or permission denied' }, { status: 404 });
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+    }
+
+    // Check if user has edit permission
+    const canEdit = note.owner_id === userId;
+
+    if (!canEdit) {
+      // Check permissions table for edit access
+      const permission = await prisma.permission.findFirst({
+        where: {
+          user_id: userId,
+          entity_type: 'note',
+          entity_id: params.noteId,
+          access_level: 'edit',
+        },
+      });
+
+      if (!permission) {
+        return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+      }
     }
 
     // Update note
@@ -102,7 +115,8 @@ export async function PUT(request: NextRequest, { params }: { params: { noteId: 
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { noteId: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ noteId: string }> }) {
+  const params = await context.params;
   try {
     // Get user from auth token (middleware will verify JWT)
     const user = request.headers.get('user');

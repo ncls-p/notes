@@ -1,16 +1,15 @@
 'use client';
 
-import { useAuth } from '@/lib/auth/store';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LogOutIcon, Home } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  // Wrap with withAuth to ensure authentication
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   };
 
@@ -31,7 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-500">
-              {user?.email}
+              {/* User email would be fetched via API in a real implementation */}
             </span>
             <Button
               variant="ghost"

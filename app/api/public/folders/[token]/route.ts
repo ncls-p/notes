@@ -5,15 +5,16 @@ const prisma = new PrismaClient();
 
 /**
  * GET /api/public/folders/[token] - Get a publicly shared folder by token
- * 
+ *
  * This route does not require authentication as it's specifically for public access
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  context: { params: Promise<{ token: string }> }
 ) {
+  const params = await context.params;
   const token = params.token;
-  
+
   if (!token) {
     return NextResponse.json(
       { error: 'Missing token' },
@@ -24,7 +25,7 @@ export async function GET(
   try {
     // First, find the folder to get its owner_id
     const folderInfo = await prisma.folder.findUnique({
-      where: { 
+      where: {
         public_share_token: token,
         is_public: true // Ensure the folder is actually public
       },
@@ -43,7 +44,7 @@ export async function GET(
 
     // Now fetch the complete folder with related data
     const folder = await prisma.folder.findUnique({
-      where: { 
+      where: {
         id: folderInfo.id
       },
       select: {
@@ -94,7 +95,7 @@ export async function GET(
     });
 
     return NextResponse.json(folder);
-    
+
   } catch (error) {
     console.error('Error retrieving public folder:', error);
     return NextResponse.json(

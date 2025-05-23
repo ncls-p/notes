@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { verify } from 'jsonwebtoken';
-import { authMiddleware } from '@/lib/auth/middleware';
 
 const prisma = new PrismaClient();
 
@@ -15,45 +14,53 @@ interface JwtPayload {
 // POST /api/invitations/{invitationId}/decline - Decline an invitation
 export async function POST(
   request: NextRequest,
-  { params }: { params: { invitationId: string } }
+  context: { params: Promise<{ invitationId: string }> }
 ) {
+  const params = await context.params;
   // Check authentication
-  const authResult = await authMiddleware(request, 'update', 'Invitation');
-  if (authResult) return authResult;
-  
+  const authHeader = request.headers.get('Authorization');
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Unauthorized: Missing or invalid token' }, { status: 401 });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
+  }
+
   const invitationId = params.invitationId;
-  
+
   try {
-    // Extract token and get user details
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader!.split(' ')[1];
+    // Verify token and get user details
     const payload = verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    
+
     // Get user details
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: { email: true }
     });
-    
+
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
       );
     }
-    
+
     // Find the invitation
     const invitation = await prisma.invitation.findUnique({
       where: { id: invitationId }
     });
-    
+
     if (!invitation) {
       return NextResponse.json(
         { error: 'Invitation not found' },
         { status: 404 }
       );
     }
-    
+
     // Check if invitation is for the authenticated user
     if (invitation.invitee_email !== user.email) {
       return NextResponse.json(
@@ -61,7 +68,7 @@ export async function POST(
         { status: 403 }
       );
     }
-    
+
     // Check if invitation is still pending
     if (invitation.status !== 'pending') {
       return NextResponse.json(
@@ -69,13 +76,13 @@ export async function POST(
         { status: 400 }
       );
     }
-    
+
     // Update invitation status to declined
     const updatedInvitation = await prisma.invitation.update({
       where: { id: invitationId },
       data: { status: 'declined' }
     });
-    
+
     return NextResponse.json({
       message: 'Invitation declined successfully',
       invitation: {
@@ -83,7 +90,7 @@ export async function POST(
         status: updatedInvitation.status
       }
     });
-    
+
   } catch (error) {
     console.error('Error declining invitation:', error);
     return NextResponse.json(
