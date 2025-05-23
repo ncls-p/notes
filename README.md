@@ -74,15 +74,14 @@ graph TD
     A["User's Browser (Client)"] -- HTTP/S, WebSocket --> B["nginx-proxy (Reverse Proxy, Optional)"]
 
     subgraph "Docker Network (Managed by docker-compose)"
-        B -- HTTP/S (Frontend) --> C["nextjs-app (Frontend Container)"]
-        B -- HTTP/S (API) --> D["backend-api (Backend Container)"]
-        B -- WSS (Collaboration) --> D
+        B -- HTTP/S (Frontend & API), WSS (Collaboration) --> C["nextjs-app (Combined Frontend & Backend Container)"]
 
-        D -- SQL Queries --> E["postgres (DB Container with pgvector)"]
+        C -- SQL Queries --> E["postgres (DB Container with pgvector)"]
 
         subgraph "User-Provided AI Integration"
-            D -- Retrieves User's AI Config --> E
-            D -- Uses Config --> F["External AI Service (OpenAI, User's Ollama, Groq, etc.)"]
+            C -- Retrieves User's AI Config (from DB) --> E
+            E -- Encrypted API Keys & Config --> C
+            C -- Decrypts & Uses Config --> F["External AI Service (OpenAI, User's Ollama, Groq, etc.)"]
         end
     end
 ```
@@ -163,9 +162,9 @@ Get your Noteworthy instance up and running with these steps:
 
 ## 📈 Project Status
 
-🚧 **Pre-Development / Initial Setup Phase** 🚧
+🚧 **Initial Foundation Laid / Core Development Underway** 🚧
 
-This project is currently in its foundational stages. We are actively working on setting up the core infrastructure and beginning development on the initial set of features.
+This project has moved beyond initial setup. Core infrastructure, including user authentication and basic data structures, is in place. We are actively developing the primary features.
 
 Follow our progress and see what's planned by checking out our [Project Backlog (BACKLOG.md)](./BACKLOG.md)!
 
