@@ -137,5 +137,87 @@ if (!global.fetch) {
   global.fetch = jest.fn();
 }
 
+// Setup for Node.js test environment
+global.TextEncoder = require('util').TextEncoder;
+global.TextDecoder = require('util').TextDecoder;
+
+// Mock PrismaClient globally for all Node.js tests
+jest.mock('@prisma/client', () => {
+  const mockUser = {
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  };
+
+  const mockNote = {
+    findFirst: jest.fn(),
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  };
+
+  const mockFolder = {
+    findFirst: jest.fn(),
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  };
+
+  const mockPermission = {
+    findFirst: jest.fn(),
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  };
+
+  return {
+    PrismaClient: jest.fn().mockImplementation(() => ({
+      user: mockUser,
+      note: mockNote,
+      folder: mockFolder,
+      permission: mockPermission,
+      $connect: jest.fn(),
+      $disconnect: jest.fn(),
+      $transaction: jest.fn(),
+    })),
+  };
+});
+
+// Mock jsonwebtoken globally
+jest.mock('jsonwebtoken', () => ({
+  sign: jest.fn(),
+  verify: jest.fn(),
+  TokenExpiredError: class TokenExpiredError extends Error {
+    name = 'TokenExpiredError';
+    constructor(message, expiredAt) {
+      super(message);
+      this.expiredAt = expiredAt;
+    }
+  },
+  JsonWebTokenError: class JsonWebTokenError extends Error {
+    name = 'JsonWebTokenError';
+  },
+}));
+
+// Mock next/headers
+jest.mock('next/headers', () => ({
+  cookies: jest.fn(),
+  headers: jest.fn(),
+}));
+
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  redirect: jest.fn(),
+  notFound: jest.fn(),
+}));
+
 // This file is for Jest Node.js environment setup.
 // You can add other global Node.js-specific configurations or mocks here if needed.

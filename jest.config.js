@@ -19,7 +19,10 @@ module.exports = {
     {
       displayName: 'dom',
       testEnvironment: 'jsdom',
-      testMatch: ['<rootDir>/__tests__/app/**/*.test.tsx'],
+      testMatch: [
+        '<rootDir>/__tests__/app/**/*.test.tsx',
+        '<rootDir>/__tests__/contexts/**/*.test.tsx',
+      ],
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
       transform: {
         '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
@@ -33,11 +36,11 @@ module.exports = {
       setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
       transformIgnorePatterns: ['node_modules/(?!(.*\\.mjs$))'],
     },
-    // Configuration for API route tests
+    // Configuration for API route tests and server-side logic
     {
       displayName: 'node',
       testEnvironment: 'node',
-      testMatch: ['<rootDir>/__tests__/api/**/*.test.ts'],
+      testMatch: ['<rootDir>/__tests__/api/**/*.test.ts', '<rootDir>/__tests__/lib/**/*.test.ts'],
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
       transform: {
         '^.+\\.(ts|tsx)$': [
