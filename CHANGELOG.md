@@ -1,46 +1,65 @@
-## [Unreleased]
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0-alpha.1] - 2025-05-23
 
 ### Added
-- User registration API route (`app/api/auth/register/route.ts`) ([BACKLOG.md: Task-UM-001.2]).
-- Prisma `User` model and migration for users table ([BACKLOG.md: Task-UM-001.1]).
-- Passing Jest test for user registration ([BACKLOG.md: Task-UM-001.2, Task-UM-001.11, Task-UM-001.13]).
-
-### Changed
-- Initial `Dockerfile` for Next.js application ([BACKLOG.md: Task-SETUP-001.3]).
-- Initial `docker-compose.yml` with `nextjs-app` and `postgres` (with pgvector) services ([BACKLOG.md: Task-SETUP-001.4]).
-- `.prettierrc.json` for code formatting ([BACKLOG.md: Task-SETUP-001.5]).
-- Prisma schema for PostgreSQL connection (`prisma/schema.prisma`) ([BACKLOG.md: Task-SETUP-001.6]).
-- Health check API route (`app/api/health/route.ts`) ([BACKLOG.md: Task-SETUP-001.7]).
-- Utility function for class name merging (`lib/utils.ts`) ([BACKLOG.md: Task-SETUP-001.2]).
-- Verified `docker-compose up` brings all services online ([BACKLOG.md: Task-SETUP-001.9]).
-
-### Changed
-- Setup Next.js project structure with App Router, TypeScript, and Tailwind CSS ([BACKLOG.md: Task-SETUP-001.2]).
-- **Production fix:** Updated `docker-compose.yml` to remove the `- .:/app` and `- /app/node_modules` volumes from the `nextjs-app` service to prevent overwriting the production build output. ([BACKLOG.md: Task-SETUP-001.4])
+- **Core Infrastructure & Project Setup (Implements `MVP-EPIC-01` / `US-SETUP-001`):**
+  - Initialized Git repository and Next.js project (App Router, TypeScript, Tailwind CSS). (`Task-SETUP-001.1`, `Task-SETUP-001.2`)
+  - Created `Dockerfile` and `docker-compose.yml` for Next.js app and PostgreSQL (with pgvector). (`Task-SETUP-001.3`, `Task-SETUP-001.4`)
+  - Configured ESLint and Prettier with explicit configuration files (`eslint.config.js`, `.prettierrc.json`) and necessary dependencies. (`Task-SETUP-001.5`)
+  - Set up Prisma client and initial schema, connecting to PostgreSQL. (`Task-SETUP-001.6`)
+  - Implemented `/api/health` API route and `/health` frontend page. (`Task-SETUP-001.7`, `Task-SETUP-001.8`)
+  - Ensured `docker-compose up` brings services online (verified by health checks in `docker-compose.yml`). (`Task-SETUP-001.9`)
+  - Documented initial project setup and local running instructions in `README.md`. (`Task-SETUP-001.10`)
+- User registration API endpoint (`/api/auth/register`) with input validation (email format, password strength) and password hashing using Argon2id. (Implements `Task-UM-001.2`, `Task-UM-001.3`, `Task-UM-001.4`, `Task-UM-001.5`, `Task-UM-001.6`)
+- Registration page UI (`/register`) with email, password, and confirm password fields. (Implements `Task-UM-001.7`)
+- Client-side validation for the registration form using `react-hook-form` and `zod`. (Implements `Task-UM-001.8`)
+- API call from registration form to the backend endpoint, with success and error handling. (Implements `Task-UM-001.9`, `Task-UM-001.10`)
+- Unit tests for the `/api/auth/register` endpoint, covering validation, hashing, and conflict scenarios. (Implements `Task-UM-001.11`)
+- Unit tests for the frontend registration form (`/register`), covering input validation, form submission, and API interaction/error handling. (Implements `Task-UM-001.12`)
+- Integration tests for the `/api/auth/register` API route using `supertest` with mocked database and hashing. (Implements `Task-UM-001.13`)
+- Setup Playwright for E2E testing, including configuration and scripts.
+- E2E test for the full user registration flow, covering successful registration, existing user conflict, and form validation. (Implements `Task-UM-001.14`)
+- Documented the `/api/auth/register` API endpoint in `README.md`. (Implements `Task-UM-001.15`)
+- User login API endpoint (`/api/auth/login`) with input validation, password verification (Argon2id), and JWT (access and refresh token) generation. Refresh token set as HttpOnly cookie. (Implements `Task-UM-002.1`, `Task-UM-002.2`, `Task-UM-002.3`, `Task-UM-002.4`, `Task-UM-002.5`)
+- Login page UI (`/login`) with email and password fields. (Implements `Task-UM-002.6`)
+- Client-side validation for the login form using `react-hook-form` and `zod`. (Implements `Task-UM-002.7`)
+- API call from login form to the backend endpoint, with success (redirect to `/dashboard`) and error handling. (Implements `Task-UM-002.8`, `Task-UM-002.9`, `Task-UM-002.10`, `Task-UM-002.11`)
+- Unit tests for the `/api/auth/login` endpoint. (Implements `Task-UM-002.12`)
+- Integration tests for the `/api/auth/login` API route. (Implements `Task-UM-002.13`)
+- E2E test for the full user login flow, including success and failure scenarios. (Implements `Task-UM-002.14`)
+- Documented the `/api/auth/login` API endpoint in `README.md`. (Implements `Task-UM-002.15`)
+- **Session Management & Token Refresh (Implements `US-UM-003`):**
+  - JWT authentication middleware/helper for protected API routes in [`lib/auth/serverAuth.ts`](lib/auth/serverAuth.ts:14). (Implements `Task-UM-003.1`)
+  - [`/api/auth/refresh-token`](app/api/auth/refresh-token/route.ts:8) API route using refresh tokens to issue new access tokens. (Implements `Task-UM-003.2`)
+  - Enhanced [`apiClient`](lib/apiClient.ts:69) with logic to attach JWT to outgoing API requests and automatic token refresh mechanism. (Implements `Task-UM-003.3`, `Task-UM-003.4`)
+  - Session expiry and token refresh failure handling with automatic logout in [`AuthContext`](contexts/AuthContext.tsx:86). (Implements `Task-UM-003.5`)
+  - Unit tests for refresh token API logic and token refresh flow. (Implements `Task-UM-003.6`, `Task-UM-003.7`)
+- **User Logout Functionality (Implements `US-UM-005`):**
+  - [`/api/auth/logout`](app/api/auth/logout/route.ts:8) API route for server-side refresh token clearing. (Implements `Task-UM-005.1`)
+  - Enhanced logout functionality in [`AuthContext`](contexts/AuthContext.tsx:71) with logout button/action, client-side token clearing, and redirect to login page. (Implements `Task-UM-005.2`, `Task-UM-005.3`, `Task-UM-005.4`)
+  - Basic [`/dashboard`](app/dashboard/page.tsx:12) page with logout functionality and protected route behavior. (Implements `Task-UM-005.5`)
+- **Additional Testing & Infrastructure:**
+  - Unit tests for [`/api/auth/refresh-token`](app/api/auth/refresh-token/route.ts:8) and [`/api/auth/logout`](app/api/auth/logout/route.ts:8) endpoints.
+  - E2E tests for session management and logout flow in [`e2e/auth/session.spec.ts`](e2e/auth/session.spec.ts:4).
+  - Enhanced test infrastructure with improved mocking for authentication flows.
 
 ### Fixed
-- Fixed Docker build/type error caused by `react-day-picker` API changes in `components/ui/calendar.tsx`.
-- Removed invalid `IconLeft` and `IconRight` properties from `components/ui/calendar.tsx`.
-- Removed unused imports (`ChevronLeft`, `ChevronRight`) from `components/ui/calendar.tsx` to resolve ESLint errors.
-- Rebuilt Docker image and containers after code and lint fixes.
-- Confirmed Docker build and startup process completed successfully.
-- Fixed production startup error: Next.js could not find a production build in the `.next` directory due to volume mount overwriting. This is now resolved by updating the compose file as above.
+- Resolved Next.js build conflict between Turbopack/Babel and `next/font` when a custom `babel.config.js` is present. This involved:
+  - Removing the `--turbopack` flag from the `dev` script in `package.json`.
+  - Creating `babel.jest.config.js` for Jest's Babel transformations.
+  - Updating `jest.config.js` to use `babel.jest.config.js`.
+  - Removing the original `babel.config.js` to allow Next.js to default to SWC, resolving `next/font` issues.
+- Corrected Tailwind CSS setup to resolve "unknown utility class" errors (e.g., `border-border`). This involved:
+  - Creating a `tailwind.config.ts` file with a Shadcn UI compatible configuration.
+  - Updating `app/globals.css` with the necessary Shadcn UI CSS variables for theming and removing problematic base styles.
 
----
-
-**BACKLOG.md Tasks Completed:**
-- SETUP-001.2 (FE/API): Setup Next.js project (App Router, TypeScript, Tailwind CSS).
-- SETUP-001.3 (Infra): Create initial `Dockerfile` for the Next.js application.
-- SETUP-001.4 (DB): Define initial `docker-compose.yml` with `nextjs-app` and `postgres` (with pgvector) services.
-- SETUP-001.5 (Infra): Configure basic formatting with `.prettierrc.json`.
-- SETUP-001.6 (API, DB): Setup Prisma client and initial schema connection to PostgreSQL from Next.js app.
-- SETUP-001.7 (API): Implement basic health check API route in Next.js app (`/api/health`).
-- SETUP-001.9 (Test): Ensure basic `docker-compose up` brings all services online.
-- UM-001.1 (DB): Design and migrate `users` table schema.
-- UM-001.2 (API): Implement `/api/auth/register` API route.
-- UM-001.11 (Test): Unit test for registration logic.
-- UM-001.13 (Test): Integration test for `/api/auth/register` API route.
-
----
-
-_See [README.md], [BACKLOG.md], and [DAT.md] for project context and architecture._
+### Changed
+- Replaced the previously empty `app/page.tsx` with a new, modern, and responsive landing page.
+  - The new landing page utilizes Shadcn UI components (`Card`, `Button`, etc.) and features improved styling with a gradient background, enhanced typography, and icons.
+  - Content for the landing page is inspired by `README.md`.

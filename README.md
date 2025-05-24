@@ -28,6 +28,10 @@
     - [Running the App](#running-the-app)
   - [📈 Project Status](#-project-status)
   - [🗺️ Roadmap](#️-roadmap)
+  - [📖 API Documentation](#-api-documentation)
+    - [Authentication Endpoints](#authentication-endpoints)
+      - [`POST /api/auth/register`](#post-apiauthregister)
+      - [`POST /api/auth/login`](#post-apiauthlogin)
   - [🤝 Contributing](#-contributing)
   - [📜 License](#-license)
   - [🧑‍💻 Author](#-author)
@@ -74,15 +78,14 @@ graph TD
     A["User's Browser (Client)"] -- HTTP/S, WebSocket --> B["nginx-proxy (Reverse Proxy, Optional)"]
 
     subgraph "Docker Network (Managed by docker-compose)"
-        B -- HTTP/S (Frontend) --> C["nextjs-app (Frontend Container)"]
-        B -- HTTP/S (API) --> D["backend-api (Backend Container)"]
-        B -- WSS (Collaboration) --> D
+        B -- HTTP/S (Frontend & API), WSS (Collaboration) --> C["nextjs-app (Combined Frontend & Backend Container)"]
 
-        D -- SQL Queries --> E["postgres (DB Container with pgvector)"]
+        C -- SQL Queries --> E["postgres (DB Container with pgvector)"]
 
         subgraph "User-Provided AI Integration"
-            D -- Retrieves User's AI Config --> E
-            D -- Uses Config --> F["External AI Service (OpenAI, User's Ollama, Groq, etc.)"]
+            C -- Retrieves User's AI Config (from DB) --> E
+            E -- Encrypted API Keys & Config --> C
+            C -- Decrypts & Uses Config --> F["External AI Service (OpenAI, User's Ollama, Groq, etc.)"]
         end
     end
 ```
@@ -163,9 +166,9 @@ Get your Noteworthy instance up and running with these steps:
 
 ## 📈 Project Status
 
-🚧 **Pre-Development / Initial Setup Phase** 🚧
+🚧 **Initial Foundation Laid / Core Development Underway** 🚧
 
-This project is currently in its foundational stages. We are actively working on setting up the core infrastructure and beginning development on the initial set of features.
+This project has moved beyond initial setup. Core infrastructure, including user authentication and basic data structures, is in place. We are actively developing the primary features.
 
 Follow our progress and see what's planned by checking out our [Project Backlog (BACKLOG.md)](./BACKLOG.md)!
 
@@ -186,6 +189,117 @@ Key epics include:
 - And many more, such as AI-powered voice transcription, offline mode, webhooks, and advanced AI configuration.
 
 Dive into the details: [Project Backlog (BACKLOG.md)](./BACKLOG.md)
+
+---
+
+## 📖 API Documentation
+
+This section will grow as more API endpoints are developed.
+
+### Authentication Endpoints
+
+#### `POST /api/auth/register`
+
+Registers a new user.
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "YourStrongPassword123!"
+}
+```
+
+- `email` (string, required): The user's email address. Must be a valid email format.
+- `password` (string, required): The user's password. Must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.
+
+**Responses:**
+
+- **`201 Created`**: User successfully registered.
+  ```json
+  {
+    "id": "user_uuid",
+    "email": "user@example.com",
+    "createdAt": "iso_timestamp"
+  }
+  ```
+- **`400 Bad Request`**: Invalid input (e.g., email format, password policy).
+  ```json
+  {
+    "error": "Invalid input",
+    "details": {
+      "email": ["Invalid email address"], // if email is invalid
+      "password": ["Password must be at least 8 characters long"] // if password is too short
+    }
+  }
+  ```
+- **`409 Conflict`**: Email already registered.
+  ```json
+  {
+    "error": "Email already registered"
+  }
+  ```
+- **`500 Internal Server Error`**: Server-side error during registration.
+  ```json
+  {
+    "error": "Internal server error"
+  }
+  ```
+
+#### `POST /api/auth/login`
+
+Logs in an existing user.
+
+**Request Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "YourStrongPassword123!"
+}
+```
+
+- `email` (string, required): The user's email address.
+- `password` (string, required): The user's password.
+
+**Responses:**
+
+- **`200 OK`**: User successfully logged in.
+  - The response body includes user information and an access token.
+  - An HttpOnly cookie named `refreshToken` is set.
+  ```json
+  {
+    "message": "Login successful",
+    "user": {
+      "id": "user_uuid",
+      "email": "user@example.com"
+    },
+    "accessToken": "your_access_token_here"
+  }
+  ```
+- **`400 Bad Request`**: Invalid input (e.g., missing fields, invalid email format).
+  ```json
+  {
+    "error": "Invalid input",
+    "details": {
+      "email": ["Invalid email address"] // if email is invalid
+    }
+  }
+  ```
+- **`401 Unauthorized`**: Invalid credentials (user not found or password mismatch).
+  ```json
+  {
+    "error": "Invalid credentials"
+  }
+  ```
+- **`500 Internal Server Error`**: Server-side error during login (e.g., JWT secrets not configured).
+  ```json
+  {
+    "error": "Internal server error"
+    // or "Internal server configuration error"
+  }
+  ```
 
 ---
 
