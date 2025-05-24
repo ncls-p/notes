@@ -25,8 +25,9 @@ export function clearAuthTokens() {
 }
 // --- End of placeholder ---
 
-interface ApiClientOptions extends RequestInit {
-  // We can add custom options here if needed in the future
+interface ApiClientOptions extends Omit<RequestInit, 'body'> {
+  // Allow plain objects for JSON bodies, in addition to standard BodyInit types
+  body?: BodyInit | object | null;
   isRetry?: boolean; // Internal flag to prevent infinite refresh loops
 }
 

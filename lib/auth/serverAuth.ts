@@ -54,6 +54,41 @@ export function withAuth(handler: ApiHandler) {
   };
 }
 
+// Standalone JWT verification function for API routes that need custom handling
+export async function verifyJWT(request: Request): Promise<{ success: true; userId: string; email: string } | { success: false; error: string }> {
+  const authHeader = request.headers.get('Authorization');
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { success: false, error: 'Missing or invalid token' };
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  if (!token) {
+    return { success: false, error: 'Missing token' };
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+
+    if (typeof decoded === 'object' && decoded.userId && decoded.email) {
+      return { success: true, userId: decoded.userId, email: decoded.email };
+    } else {
+      console.error('JWT verification successful, but payload is not as expected:', decoded);
+      return { success: false, error: 'Invalid token payload' };
+    }
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return { success: false, error: 'Token expired' };
+    }
+    if (error instanceof jwt.JsonWebTokenError) {
+      return { success: false, error: 'Invalid token' };
+    }
+    console.error('JWT verification error:', error);
+    return { success: false, error: 'Internal server error during authentication' };
+  }
+}
+
 // Example of a protected API route (not part of this file, just for illustration)
 // import { withAuth, AuthenticatedRequest } from '@/lib/auth/serverAuth';
 // import { NextResponse } from 'next/server';

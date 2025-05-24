@@ -93,36 +93,36 @@ This section outlines the essential features required for the initial, usable ve
 ### MVP-EPIC-03: Core Note-Taking & Organization
 
 - **US-NT-001 (FR-NT-005):** As a User, I want to create, rename, and delete folders, including nested folders, so that I can organize my notes hierarchically.
-  - **Task-NT-001.1 (DB):** Design and migrate `folders` table schema (id, name, parent_folder_id, owner_id, timestamps).
-  - **Task-NT-001.2 (API):** Implement `/api/folders` POST API route for creating folders.
-  - **Task-NT-001.3 (API):** Implement `/api/folders/{folderId}` PUT API route for renaming folders.
-  - **Task-NT-001.4 (API):** Implement `/api/folders/{folderId}` DELETE API route for deleting folders (MVP: disallow deleting non-empty folders).
-  - **Task-NT-001.5 (API):** Implement `/api/folders` GET API route to list folders (hierarchically or flat with parent IDs, for user).
-  - **Task-NT-001.6 (FE):** Develop Folder Tree/File Explorer UI component (basic version for MVP).
-  - **Task-NT-001.7 (FE):** Implement "Create Folder" functionality (modal or inline).
-  - **Task-NT-001.8 (FE):** Implement "Rename Folder" functionality.
-  - **Task-NT-001.9 (FE):** Implement "Delete Folder" functionality (with confirmation).
-  - **Task-NT-001.10 (FE):** Display nested folder structure.
-  - **Task-NT-001.11 (Test):** Unit and Integration tests for folder CRUD API logic.
+  - **Task-NT-001.1 (DB):** Design and migrate `folders` table schema (id, name, parent_folder_id, owner_id, timestamps). **[DONE]**
+  - **Task-NT-001.2 (API):** Implement `/api/folders` POST API route for creating folders. **[DONE]**
+  - **Task-NT-001.3 (API):** Implement `/api/folders/{folderId}` PUT API route for renaming folders. **[DONE]**
+  - **Task-NT-001.4 (API):** Implement `/api/folders/{folderId}` DELETE API route for deleting folders (MVP: disallow deleting non-empty folders). **[DONE]**
+  - **Task-NT-001.5 (API):** Implement `/api/folders` GET API route to list folders (hierarchically or flat with parent IDs, for user). **[DONE]**
+  - **Task-NT-001.6 (FE):** Develop Folder Tree/File Explorer UI component (basic version for MVP). **[DONE]**
+  - **Task-NT-001.7 (FE):** Implement "Create Folder" functionality (modal or inline). **[DONE]**
+  - **Task-NT-001.8 (FE):** Implement "Rename Folder" functionality. **[PARTIALLY DONE - UI implemented, needs edit functionality]**
+  - **Task-NT-001.9 (FE):** Implement "Delete Folder" functionality (with confirmation). **[DONE]**
+  - **Task-NT-001.10 (FE):** Display nested folder structure. **[PARTIALLY DONE - basic display implemented, navigation works]**
+  - **Task-NT-001.11 (Test):** Unit and Integration tests for folder CRUD API logic. **[IN PROGRESS]**
   - **Task-NT-001.12 (Test):** E2E tests for basic folder management.
-  - **Task-NT-001.13 (Docs):** Document folder API routes.
+  - **Task-NT-001.13 (Docs):** Document folder API routes. **[DONE - in README.md updates needed]**
 
 - **US-NT-002 (FR-NT-001, FR-NT-002):** As a User, I want to create, view, edit, and delete notes within folders or at the root level, with content stored in Markdown, so that I can manage my textual information.
-  - **Task-NT-002.1 (DB):** Design and migrate `notes` table schema (id, title, content_markdown, folder_id, owner_id, timestamps). (Defer `yjs_doc_state`, `public_share_token`, `is_public`, `current_version_id` for MVP).
-  - **Task-NT-002.2 (API):** Implement `/api/notes` POST API route for creating notes.
-  - **Task-NT-002.3 (API):** Implement `/api/notes/{noteId}` GET API route for fetching a note.
-  - **Task-NT-002.4 (API):** Implement `/api/notes/{noteId}` PUT API route for updating a note (title, content).
-  - **Task-NT-002.5 (API):** Implement `/api/notes/{noteId}` DELETE API route for deleting notes.
-  - **Task-NT-002.6 (API):** Implement GET API route to list notes within a folder or at root (e.g., `/api/folders/{folderId}/notes`, `/api/notes?folderId=null`).
-  - **Task-NT-002.7 (FE):** Develop Note Editor UI using CodeMirror 6 (basic setup for MVP).
-  - **Task-NT-002.8 (FE):** Implement "Create Note" functionality.
-  - **Task-NT-002.9 (FE):** Display note content in editor when a note is selected/opened.
-  - **Task-NT-002.10 (FE):** Implement saving mechanism for note content (manual save button for MVP, auto-save can be post-MVP).
-  - **Task-NT-002.11 (FE):** Implement "Delete Note" functionality (with confirmation).
-  - **Task-NT-002.12 (FE):** Integrate note list within the File Explorer UI.
-  - **Task-NT-002.13 (Test):** Unit and Integration tests for note CRUD API logic.
-  - **Task-NT-002.14 (Test):** E2E tests for note creation, viewing, editing, deletion.
-  - **Task-NT-002.15 (Docs):** Document note API routes.
+  - **Task-NT-002.1 (DB):** Design and migrate `notes` table schema (id, title, content_markdown, folder_id, owner_id, timestamps). (Defer `yjs_doc_state`, `public_share_token`, `is_public`, `current_version_id` for MVP). **[DONE]**
+  - **Task-NT-002.2 (API):** Implement `/api/notes` POST API route for creating notes. **[DONE]**
+  - **Task-NT-002.3 (API):** Implement `/api/notes/{noteId}` GET API route for fetching a note. **[DONE]**
+  - **Task-NT-002.4 (API):** Implement `/api/notes/{noteId}` PUT API route for updating a note (title, content). **[DONE]**
+  - **Task-NT-002.5 (API):** Implement `/api/notes/{noteId}` DELETE API route for deleting notes. **[DONE]**
+  - **Task-NT-002.6 (API):** Implement GET API route to list notes within a folder or at root (e.g., `/api/folders/{folderId}/notes`, `/api/notes?folderId=null`). **[DONE]**
+  - **Task-NT-002.7 (FE):** Develop Note Editor UI using CodeMirror 6 (basic setup for MVP). **[TODO - needs separate note editor page]**
+  - **Task-NT-002.8 (FE):** Implement "Create Note" functionality. **[DONE]**
+  - **Task-NT-002.9 (FE):** Display note content in editor when a note is selected/opened. **[TODO - needs note editor page]**
+  - **Task-NT-002.10 (FE):** Implement saving mechanism for note content (manual save button for MVP, auto-save can be post-MVP). **[TODO - needs note editor page]**
+  - **Task-NT-002.11 (FE):** Implement "Delete Note" functionality (with confirmation). **[DONE]**
+  - **Task-NT-002.12 (FE):** Integrate note list within the File Explorer UI. **[DONE]**
+  - **Task-NT-002.13 (Test):** Unit and Integration tests for note CRUD API logic. **[TODO]**
+  - **Task-NT-002.14 (Test):** E2E tests for note creation, viewing, editing, deletion. **[TODO]**
+  - **Task-NT-002.15 (Docs):** Document note API routes. **[DONE - in README.md updates needed]**
 
 - **US-NT-003 (FR-NT-003):** As a User, I want a real-time, side-by-side preview of my Markdown notes as I type so that I can see the rendered output immediately.
   - **Task-NT-003.1 (FE):** Integrate `react-markdown` (with `remark-gfm`, `rehype-sanitize`, `rehype-highlight`) for Markdown rendering.

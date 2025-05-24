@@ -63,3 +63,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replaced the previously empty `app/page.tsx` with a new, modern, and responsive landing page.
   - The new landing page utilizes Shadcn UI components (`Card`, `Button`, etc.) and features improved styling with a gradient background, enhanced typography, and icons.
   - Content for the landing page is inspired by `README.md`.
+
+## [0.2.0-alpha.1] - 2025-05-24
+
+### Added
+- **Core Note-Taking & Organization (Implements `MVP-EPIC-03`):**
+  - **Folder Management API (Implements `US-NT-001`):**
+    - [`/api/folders`](app/api/folders/route.ts:8) POST route for creating folders with validation and duplicate checking. (Implements `Task-NT-001.2`)
+    - [`/api/folders`](app/api/folders/route.ts:8) GET route for listing folders by parent with hierarchical support. (Implements `Task-NT-001.5`)
+    - [`/api/folders/[folderId]`](app/api/folders/[folderId]/route.ts:8) PUT route for renaming and moving folders with cyclical structure prevention. (Implements `Task-NT-001.3`)
+    - [`/api/folders/[folderId]`](app/api/folders/[folderId]/route.ts:8) DELETE route for deleting empty folders (MVP restriction). (Implements `Task-NT-001.4`)
+    - Enhanced [`verifyJWT`](lib/auth/serverAuth.ts:58) function in serverAuth for standalone JWT verification in API routes. (Supporting infrastructure)
+  - **Notes Management API (Implements `US-NT-002`):**
+    - [`/api/notes`](app/api/notes/route.ts:8) POST route for creating notes with folder validation and duplicate title checking. (Implements `Task-NT-002.2`)
+    - [`/api/notes`](app/api/notes/route.ts:8) GET route for listing notes by folder with filtering support. (Implements `Task-NT-002.6`)
+    - [`/api/notes/[noteId]`](app/api/notes/[noteId]/route.ts:8) GET route for fetching individual notes. (Implements `Task-NT-002.3`)
+    - [`/api/notes/[noteId]`](app/api/notes/[noteId]/route.ts:8) PUT route for updating note title, content, and folder location. (Implements `Task-NT-002.4`)
+    - [`/api/notes/[noteId]`](app/api/notes/[noteId]/route.ts:8) DELETE route for deleting notes. (Implements `Task-NT-002.5`)
+  - **Dashboard UI (Implements folder and note management frontend):**
+    - Complete [`/dashboard`](app/dashboard/page.tsx:12) page with folder tree navigation and note listing. (Implements `Task-NT-001.6`, `Task-NT-002.12`)
+    - Modal-based "Create Folder" and "Create Note" functionality with form validation. (Implements `Task-NT-001.7`, `Task-NT-002.8`)
+    - Delete functionality for both folders and notes with confirmation dialogs. (Implements `Task-NT-001.9`, `Task-NT-002.11`)
+    - Basic folder navigation with breadcrumb support (root level). (Implements `Task-NT-001.10`)
+    - Error handling and loading states for all operations.
+    - Responsive grid layout showing folders and notes with metadata (counts, dates).
+- **Enhanced Project Scripts:**
+  - Added Prisma management scripts to [`package.json`](package.json:12): `prisma:generate`, `prisma:migrate`, `prisma:migrate:dev`, `prisma:studio`, `prisma:reset`.
+- **Database Schema Implementation:**
+  - Complete `folders` and `notes` table schemas with proper relationships and constraints. (Implements `Task-NT-001.1`, `Task-NT-002.1`)
+  - Support for hierarchical folder structure with parent-child relationships.
+  - Note-to-folder associations with optional folder placement (root level notes).
+
+### Technical Improvements
+- All API routes include comprehensive input validation using Zod schemas.
+- Proper error handling with descriptive messages and appropriate HTTP status codes.
+- Authorization checks on all protected endpoints using JWT verification.
+- Prevention of cyclical folder structures in move operations.
+- Duplicate name checking within the same parent folder for both folders and notes.
+- Integration with existing authentication system and protected route middleware.
+
+### Notes
+- Note editing functionality (CodeMirror 6 integration) is planned for the next iteration.
+- Advanced features like real-time collaboration, version history, and AI integration are scheduled for post-MVP.
+- Current folder navigation is basic; full breadcrumb support for nested folders will be enhanced in future versions.
