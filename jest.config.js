@@ -1,19 +1,9 @@
-const { pathsToModuleNameMapper } = require('ts-jest');
-const tsconfig = require('./tsconfig.json');
+// Manual module name mapper configuration to handle @/* paths
+const moduleNameMapperConfig = {
+  '^@/(.*)$': '<rootDir>/$1',
+};
 
-// Ensure paths exist in tsconfig.compilerOptions before trying to access them
-const tsconfigPaths =
-  tsconfig.compilerOptions && tsconfig.compilerOptions.paths ? tsconfig.compilerOptions.paths : {};
-
-const moduleNameMapperConfig = pathsToModuleNameMapper(tsconfigPaths, {
-  // The prefix should be <rootDir>/ because baseUrl in tsconfig.json is effectively '.' (the root)
-  // and paths like "@/*": ["./*"] are relative to that.
-  prefix: '<rootDir>/',
-});
-
-console.log('Jest moduleNameMapper configuration:', moduleNameMapperConfig); // For debugging
-
-module.exports = {
+export default {
   projects: [
     // Configuration for React component tests
     {
