@@ -73,20 +73,20 @@ This section outlines the essential features required for the initial, usable ve
   - **Task-UM-002.15 (Docs):** Document `/api/auth/login` API route. **[DONE]**
 
 - **US-UM-003:** As an authenticated User, I want the application to maintain my session so that I don't have to log in repeatedly.
-  - **Task-UM-003.1 (API):** Implement JWT authentication middleware/helper for protected API routes in Next.js.
-  - **Task-UM-003.2 (API):** Implement `/api/auth/refresh-token` API route using refresh tokens to issue new access tokens.
-  - **Task-UM-003.3 (FE):** Implement logic to attach JWT to outgoing API requests.
-  - **Task-UM-003.4 (FE):** Implement automatic token refresh mechanism using the refresh token.
-  - **Task-UM-003.5 (FE):** Handle session expiry and token refresh failures (e.g., redirect to login).
-  - **Task-UM-003.6 (Test):** Test protected API routes access with valid/invalid/expired tokens.
-  - **Task-UM-003.7 (Test):** Test token refresh flow.
+  - **Task-UM-003.1 (API):** Implement JWT authentication middleware/helper for protected API routes in Next.js. **[DONE]**
+  - **Task-UM-003.2 (API):** Implement `/api/auth/refresh-token` API route using refresh tokens to issue new access tokens. **[DONE]**
+  - **Task-UM-003.3 (FE):** Implement logic to attach JWT to outgoing API requests. **[DONE]**
+  - **Task-UM-003.4 (FE):** Implement automatic token refresh mechanism using the refresh token. **[DONE]**
+  - **Task-UM-003.5 (FE):** Handle session expiry and token refresh failures (e.g., redirect to login). **[DONE]**
+  - **Task-UM-003.6 (Test):** Test protected API routes access with valid/invalid/expired tokens. **[DONE]**
+  - **Task-UM-003.7 (Test):** Test token refresh flow. **[DONE]**
 
 - **US-UM-005:** As an authenticated User, I want to be able to log out so that I can securely end my session.
-  - **Task-UM-005.1 (API):** Implement `/api/auth/logout` API route (if using server-side session invalidation for refresh tokens, e.g. blocklisting - simpler client-side only logout for MVP).
-  - **Task-UM-005.2 (FE):** Implement logout button/action.
-  - **Task-UM-005.3 (FE):** Clear stored JWTs from client-side.
-  - **Task-UM-005.4 (FE):** Redirect to login page.
-  - **Task-UM-005.5 (Test):** E2E test for logout flow.
+  - **Task-UM-005.1 (API):** Implement `/api/auth/logout` API route (if using server-side session invalidation for refresh tokens, e.g. blocklisting - simpler client-side only logout for MVP). **[DONE]**
+  - **Task-UM-005.2 (FE):** Implement logout button/action. **[DONE]**
+  - **Task-UM-005.3 (FE):** Clear stored JWTs from client-side. **[DONE]**
+  - **Task-UM-005.4 (FE):** Redirect to login page. **[DONE]**
+  - **Task-UM-005.5 (Test):** E2E test for logout flow. **[DONE]**
 
 ---
 

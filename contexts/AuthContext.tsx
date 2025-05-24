@@ -68,7 +68,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Call the logout API to clear server-side refresh token
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include', // Include cookies
+      });
+    } catch (error) {
+      console.error('Failed to call logout API:', error);
+      // Continue with client-side logout even if server call fails
+    }
+
     try {
       clearAuthTokens();
     } catch (error) {

@@ -34,6 +34,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration tests for the `/api/auth/login` API route. (Implements `Task-UM-002.13`)
 - E2E test for the full user login flow, including success and failure scenarios. (Implements `Task-UM-002.14`)
 - Documented the `/api/auth/login` API endpoint in `README.md`. (Implements `Task-UM-002.15`)
+- **Session Management & Token Refresh (Implements `US-UM-003`):**
+  - JWT authentication middleware/helper for protected API routes in [`lib/auth/serverAuth.ts`](lib/auth/serverAuth.ts:14). (Implements `Task-UM-003.1`)
+  - [`/api/auth/refresh-token`](app/api/auth/refresh-token/route.ts:8) API route using refresh tokens to issue new access tokens. (Implements `Task-UM-003.2`)
+  - Enhanced [`apiClient`](lib/apiClient.ts:69) with logic to attach JWT to outgoing API requests and automatic token refresh mechanism. (Implements `Task-UM-003.3`, `Task-UM-003.4`)
+  - Session expiry and token refresh failure handling with automatic logout in [`AuthContext`](contexts/AuthContext.tsx:86). (Implements `Task-UM-003.5`)
+  - Unit tests for refresh token API logic and token refresh flow. (Implements `Task-UM-003.6`, `Task-UM-003.7`)
+- **User Logout Functionality (Implements `US-UM-005`):**
+  - [`/api/auth/logout`](app/api/auth/logout/route.ts:8) API route for server-side refresh token clearing. (Implements `Task-UM-005.1`)
+  - Enhanced logout functionality in [`AuthContext`](contexts/AuthContext.tsx:71) with logout button/action, client-side token clearing, and redirect to login page. (Implements `Task-UM-005.2`, `Task-UM-005.3`, `Task-UM-005.4`)
+  - Basic [`/dashboard`](app/dashboard/page.tsx:12) page with logout functionality and protected route behavior. (Implements `Task-UM-005.5`)
+- **Additional Testing & Infrastructure:**
+  - Unit tests for [`/api/auth/refresh-token`](app/api/auth/refresh-token/route.ts:8) and [`/api/auth/logout`](app/api/auth/logout/route.ts:8) endpoints.
+  - E2E tests for session management and logout flow in [`e2e/auth/session.spec.ts`](e2e/auth/session.spec.ts:4).
+  - Enhanced test infrastructure with improved mocking for authentication flows.
+
 ### Fixed
 - Resolved Next.js build conflict between Turbopack/Babel and `next/font` when a custom `babel.config.js` is present. This involved:
   - Removing the `--turbopack` flag from the `dev` script in `package.json`.

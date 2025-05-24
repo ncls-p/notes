@@ -94,11 +94,12 @@ export default function LoginPage() {
               id="email"
               type="email"
               autoComplete="email"
+              data-testid="email-input"
               {...register('email')}
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               placeholder="you@example.com"
             />
-            {errors.email && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.email.message}</p>}
+            {errors.email && <p className="mt-1 text-xs text-red-600 dark:text-red-400" data-testid="email-error">{errors.email.message}</p>}
           </div>
           <div>
             <Label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -108,16 +109,18 @@ export default function LoginPage() {
               id="password"
               type="password"
               autoComplete="current-password"
+              data-testid="password-input"
               {...register('password')}
               className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
               placeholder="••••••••"
             />
-            {errors.password && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password.message}</p>}
+            {errors.password && <p className="mt-1 text-xs text-red-600 dark:text-red-400" data-testid="password-error">{errors.password.message}</p>}
           </div>
           <div className="pt-2">
             <Button
               type="submit"
               disabled={loading}
+              data-testid="login-button"
               className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-50"
             >
               {loading ? 'Logging In...' : 'Log In'}
@@ -126,7 +129,7 @@ export default function LoginPage() {
         </form>
         <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
           Don't have an account?{' '}
-          <a href="/register" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+          <a href="/register" data-testid="register-link" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
             Sign up
           </a>
         </p>
