@@ -12,6 +12,7 @@ export default {
       testMatch: [
         '<rootDir>/__tests__/app/**/*.test.tsx',
         '<rootDir>/__tests__/contexts/**/*.test.tsx',
+        '<rootDir>/__tests__/components/**/*.test.tsx',
       ],
       moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
       transform: {
@@ -24,7 +25,9 @@ export default {
           'jest-transform-stub',
       },
       setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
-      transformIgnorePatterns: ['node_modules/(?!(.*\\.mjs$))'],
+      transformIgnorePatterns: [
+        'node_modules/(?!(react-markdown|remark-gfm|rehype-sanitize|rehype-highlight|.*\\.mjs$))'
+      ],
     },
     // Configuration for API route tests and server-side logic
     {

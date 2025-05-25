@@ -5,7 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.1-alpha.1] - 2025-05-25
+## [0.3.0-alpha.1] - 2025-05-25
+
+### Added
+- **Comprehensive Test Suite Implementation (Completes MVP Testing Requirements):**
+  - **Unit Tests for Notes API (Implements `Task-NT-002.13`):**
+    - Created comprehensive unit tests for [`/api/notes`](app/api/notes/route.ts:8) covering POST and GET operations.
+    - Added unit tests for [`/api/notes/[noteId]`](app/api/notes/[noteId]/route.ts:8) covering GET, PUT, and DELETE operations.
+    - Implemented test coverage for authorization, validation, error handling, and success scenarios.
+    - Tests include proper mocking of Prisma and authentication middleware.
+  - **E2E Tests for Folder Management (Implements `Task-NT-001.12`):**
+    - Created [`e2e/folders.spec.ts`](e2e/folders.spec.ts:1) with comprehensive folder management test scenarios.
+    - Test coverage includes folder creation, validation, renaming, deletion, and navigation.
+    - Tests verify UI interactions, modal dialogs, and error handling.
+    - Includes tests for folder hierarchy and note count display.
+  - **E2E Tests for Note Management (Implements `Task-NT-002.14`):**
+    - Created [`e2e/notes.spec.ts`](e2e/notes.spec.ts:1) with comprehensive note management test scenarios.
+    - Test coverage includes note creation, editing, deletion, and content persistence.
+    - Tests verify CodeMirror editor functionality, Markdown preview, and save mechanisms.
+    - Includes tests for unsaved changes warnings and auto-save functionality.
+  - **Markdown Rendering Tests (Implements `Task-NT-003.5`):**
+    - Created [`__tests__/components/MarkdownPreview.test.tsx`](__tests__/components/MarkdownPreview.test.tsx:1) with comprehensive Markdown rendering tests.
+    - Test coverage includes headers, text formatting, lists, code blocks, tables, and GFM extensions.
+    - Tests verify proper CSS styling, HTML structure, and sanitization of dangerous content.
+    - Includes tests for complex nested content and edge cases.
+
+### Technical Improvements
+- **Enhanced Jest Configuration:**
+  - Updated [`jest.config.js`](jest.config.js:1) to include component tests in the DOM test environment.
+  - Added transform ignore patterns for ES module dependencies (react-markdown, remark-gfm, etc.).
+  - Maintained separate configurations for DOM and Node.js test environments.
+- **Comprehensive Test Coverage:**
+  - Unit tests cover all API endpoints with proper mocking and error scenarios.
+  - E2E tests cover complete user workflows from registration through note management.
+  - Component tests ensure Markdown rendering works correctly with all supported elements.
+
+### Notes
+- All major MVP testing requirements have been implemented according to the project backlog.
+- Tests are designed to be maintainable and provide good coverage of both happy path and error scenarios.
+- E2E tests may require the application to be running locally (`npm run dev`) for execution.
+- Some unit tests may need refinement based on actual Prisma implementation details.
+
+## [0.2.1-alpha.1] - 2025-05-24
 
 ### Added
 - **Enhanced Folder Management (Completes `Task-NT-001.8`):**
