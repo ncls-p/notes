@@ -18,11 +18,13 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 // Import the token clearing function
 import { clearAuthTokens, setAccessToken } from '@/lib/apiClient';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login } = useAuth();
 
   useEffect(() => {
     // Clear any existing tokens when the login page loads
@@ -58,13 +60,13 @@ export default function LoginPage() {
         // Token storage will be handled in Task-UM-002.9
         // The refresh token is set as an HttpOnly cookie by the server.
         // The access token should be stored in memory.
-        if (result.accessToken) {
-          setAccessToken(result.accessToken); // Store the access token
-          console.log('Access Token stored.');
+        if (result.accessToken && result.user) {
+          // Use AuthContext login method to set both token and user data
+          login(result.accessToken, result.user);
+          console.log('Login successful, user:', result.user);
         }
         // Redirect will be handled in Task-UM-002.10
-        console.log('Login successful, user:', result.user);
-        router.push('/');
+        router.push('/dashboard');
       }
     } catch (error) {
       console.error('Login submission error:', error);

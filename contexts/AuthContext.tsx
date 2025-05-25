@@ -34,16 +34,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const token = getAccessToken(); // Synchronous in current mock, could be async
         if (token) {
-          // In a real app, you'd verify token and fetch user data here
-          // For this example, if a token exists, we assume it implies a logged-in user.
-          // The actual user data would be set during login or fetched based on the token.
-          // If getAccessToken also returned user data, we could use it here.
-          // For now, we just set isAuthenticated. User data comes via login().
-          if (isMounted) {
-            setIsAuthenticated(true);
-            // If you had a way to get user from token, set it here:
-            // e.g., const userData = await fetchUserFromToken(token);
-            // setUser(userData);
+          // Decode the JWT token to extract user data
+          try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            const decoded = JSON.parse(jsonPayload);
+
+            if (decoded.userId && decoded.email && isMounted) {
+              setUser({
+                id: decoded.userId,
+                email: decoded.email
+              });
+              setIsAuthenticated(true);
+            }
+          } catch (decodeError) {
+            console.error('Failed to decode token:', decodeError);
+            // If token is invalid, clear it
+            clearAuthTokens();
           }
         }
       } catch (error) {

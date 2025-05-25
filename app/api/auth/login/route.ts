@@ -64,6 +64,15 @@ export async function POST(request: Request) {
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
     });
 
+    // Set auth_token cookie that middleware expects
+    response.cookies.set('auth_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 15 * 60, // 15 minutes (same as access token expiry)
+    });
+
     return response;
 
   } catch (error) {

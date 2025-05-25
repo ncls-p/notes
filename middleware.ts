@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verify } from 'jsonwebtoken'
+import { verifyJWT } from '@/lib/jwt-edge'
 
 // Define paths that don't require authentication
 const PUBLIC_PATHS = [
@@ -11,7 +11,7 @@ const PUBLIC_PATHS = [
   '/public'
 ];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Skip middleware for public paths
   if (PUBLIC_PATHS.some(path => request.nextUrl.pathname.startsWith(path))) {
     return NextResponse.next();
@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
       throw new Error('JWT_SECRET is not configured');
     }
 
-    const decoded = verify(authToken, secret);
+    const decoded = await verifyJWT(authToken, secret);
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('user', JSON.stringify(decoded));
 
