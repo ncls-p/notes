@@ -1,32 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Folder,
-  FileText,
-  Plus,
-  Trash2,
-  Edit,
-  LogOut,
-  MoreHorizontal,
-  Pencil,
-  FolderOpen,
-  ExternalLink,
-  Search,
-  Grid,
-  List,
-} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -34,8 +10,30 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '@/contexts/AuthContext';
 import apiClient from '@/lib/apiClient';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import {
+  ExternalLink,
+  FileText,
+  Folder,
+  FolderOpen,
+  Grid,
+  List,
+  LogOut,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Folder {
   id: string;
@@ -58,6 +56,21 @@ interface Note {
   updatedAt: string;
 }
 
+interface SearchResult {
+  id: string;
+  type: 'folder' | 'note';
+  name: string;
+  title?: string;
+  contentMarkdown?: string | null;
+  path: string;
+  folderId: string | null;
+  folder?: { id: string; name: string } | null;
+  childrenCount?: number;
+  notesCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function Dashboard() {
   const { user, logout, isLoading: authLoading } = useAuth();
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -67,7 +80,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortOption, setSortOption] = useState<'name' | 'createdAt' | 'updatedAt'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
   // Form states
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
@@ -77,15 +94,59 @@ export default function Dashboard() {
   const [editingFolder, setEditingFolder] = useState<{ id: string; name: string } | null>(null);
   const [editFolderName, setEditFolderName] = useState('');
 
-  // Filtered content based on search
-  const filteredFolders = folders.filter((folder) =>
-    folder.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const filteredNotes = notes.filter(
-    (note) =>
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (note.contentMarkdown?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
-  );
+  // Search functionality
+  const performSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      setError(null);
+
+      const searchApiUrl = `/api/search?query=${encodeURIComponent(query)}&sortBy=${
+        sortOption === 'name' ? 'name' : sortOption
+      }&sortOrder=${sortOrder}&limit=50`;
+
+      console.log('Dashboard: Performing search with URL:', searchApiUrl);
+
+      const response = (await apiClient(searchApiUrl, { method: 'GET' })) as {
+        results: SearchResult[];
+      };
+      setSearchResults(response.results || []);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to search');
+      console.error('Dashboard: Failed to search:', err);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        performSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, sortOption, sortOrder]);
+
+  // Determine what content to display
+  const isSearchMode = searchQuery.trim().length > 0;
+  const filteredFolders = isSearchMode
+    ? searchResults.filter((result) => result.type === 'folder')
+    : folders;
+  const filteredNotes = isSearchMode
+    ? searchResults.filter((result) => result.type === 'note')
+    : notes;
 
   useEffect(() => {
     if (user) {
@@ -96,7 +157,7 @@ export default function Dashboard() {
         setBreadcrumbPath([]);
       }
     }
-  }, [user, currentFolderId]);
+  }, [user, currentFolderId, sortOption, sortOrder]);
 
   const loadBreadcrumbPath = async (folderId: string) => {
     const path: Folder[] = [];
@@ -121,15 +182,27 @@ export default function Dashboard() {
       setLoading(true);
       setError(null);
 
+      const notesSortBy = sortOption === 'name' ? 'title' : sortOption;
+      const folderApiUrl = `/api/folders?parentId=${
+        currentFolderId || 'null'
+      }&sortBy=${sortOption}&sortOrder=${sortOrder}`;
+      const notesApiUrl = `/api/notes?folderId=${
+        currentFolderId || 'null'
+      }&sortBy=${notesSortBy}&sortOrder=${sortOrder}`;
+
+      console.log('Dashboard: Fetching folders with URL:', folderApiUrl);
+      console.log('Dashboard: Fetching notes with URL:', notesApiUrl);
+
       const [foldersResponse, notesResponse] = await Promise.all([
-        apiClient(`/api/folders?parentId=${currentFolderId || 'null'}`, { method: 'GET' }),
-        apiClient(`/api/notes?folderId=${currentFolderId || 'null'}`, { method: 'GET' }),
+        apiClient(folderApiUrl, { method: 'GET' }),
+        apiClient(notesApiUrl, { method: 'GET' }),
       ]);
 
       setFolders(foldersResponse as Folder[]);
       setNotes(notesResponse as Note[]);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load data');
+      console.error('Dashboard: Failed to load data:', err);
     } finally {
       setLoading(false);
     }
@@ -227,6 +300,16 @@ export default function Dashboard() {
     }
   };
 
+  const handleSortChange = (option: 'name' | 'createdAt' | 'updatedAt') => {
+    if (option === sortOption) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortOption(option);
+      setSortOrder('asc');
+    }
+    // loadData will be called by the useEffect hook due to sortOption/sortOrder dependency change
+  };
+
   if (authLoading) {
     return (
       <div className='min-h-screen bg-background flex items-center justify-center text-foreground'>
@@ -284,8 +367,163 @@ export default function Dashboard() {
               </Button>
             </div>
           </div>
+          {/* Search Bar - Centered */}
+          <div className='flex justify-center items-center pt-2 pb-4'>
+            <div className='relative w-full max-w-xl'>
+              <Input
+                type='search'
+                placeholder='Search across all notes and folders...'
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className='pl-10 pr-4 py-3 w-full rounded-lg bg-background/50 backdrop-blur-sm border-border focus:border-primary smooth-hover text-lg'
+              />
+              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground' />
+            </div>
+          </div>
         </div>
       </header>
+
+      {/* Controls Bar */}
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap justify-between items-center gap-4 border-b border-border'>
+        <div className='flex items-center space-x-2'>
+          {/* Create Folder Dialog */}
+          <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
+            <DialogTrigger asChild>
+              <Button variant='default' className='group'>
+                <Plus className='w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200' />
+                New Folder
+              </Button>
+            </DialogTrigger>
+            <DialogContent className='glass-effect animate-fade-in-scale'>
+              <DialogHeader>
+                <DialogTitle>Create New Folder</DialogTitle>
+              </DialogHeader>
+              <div className='space-y-4 py-4'>
+                <Input
+                  placeholder='Folder name'
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && createFolder()}
+                  className='smooth-hover'
+                />
+                <div className='flex justify-end space-x-2'>
+                  <Button variant='outline' onClick={() => setIsCreateFolderOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={createFolder} variant='default'>
+                    Create
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Create Note Dialog */}
+          <Dialog open={isCreateNoteOpen} onOpenChange={setIsCreateNoteOpen}>
+            <DialogTrigger asChild>
+              <Button variant='outline' className='group smooth-hover'>
+                <Plus className='w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200' />
+                New Note
+              </Button>
+            </DialogTrigger>
+            <DialogContent className='glass-effect animate-fade-in-scale'>
+              <DialogHeader>
+                <DialogTitle>Create New Note</DialogTitle>
+              </DialogHeader>
+              <div className='space-y-4 py-4'>
+                <Input
+                  placeholder='Note title'
+                  value={newNoteTitle}
+                  onChange={(e) => setNewNoteTitle(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && createNote()}
+                  className='smooth-hover'
+                />
+                <div className='flex justify-end space-x-2'>
+                  <Button variant='outline' onClick={() => setIsCreateNoteOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={createNote} variant='default'>
+                    Create
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className='flex items-center space-x-3'>
+          {/* Sort Options - Added Here */}
+          <div className='flex items-center space-x-1 bg-muted/30 p-1 rounded-lg'>
+            <Button
+              variant={sortOption === 'name' ? 'default' : 'ghost'}
+              size='sm'
+              onClick={() => handleSortChange('name')}
+              className='smooth-hover'
+              title={
+                sortOption === 'name'
+                  ? sortOrder === 'asc'
+                    ? 'Sort by Name (Ascending)'
+                    : 'Sort by Name (Descending)'
+                  : 'Sort by Name'
+              }
+            >
+              Name {sortOption === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </Button>
+            <Button
+              variant={sortOption === 'createdAt' ? 'default' : 'ghost'}
+              size='sm'
+              onClick={() => handleSortChange('createdAt')}
+              className='smooth-hover'
+              title={
+                sortOption === 'createdAt'
+                  ? sortOrder === 'asc'
+                    ? 'Sort by Date Created (Ascending)'
+                    : 'Sort by Date Created (Descending)'
+                  : 'Sort by Date Created'
+              }
+            >
+              Created {sortOption === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </Button>
+            <Button
+              variant={sortOption === 'updatedAt' ? 'default' : 'ghost'}
+              size='sm'
+              onClick={() => handleSortChange('updatedAt')}
+              className='smooth-hover'
+              title={
+                sortOption === 'updatedAt'
+                  ? sortOrder === 'asc'
+                    ? 'Sort by Date Modified (Ascending)'
+                    : 'Sort by Date Modified (Descending)'
+                  : 'Sort by Date Modified'
+              }
+            >
+              Modified {sortOption === 'updatedAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </Button>
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className='flex items-center space-x-1 bg-muted/30 p-1 rounded-lg'>
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              onClick={() => setViewMode('grid')}
+              size='sm'
+              className='smooth-hover'
+              title='Grid View'
+            >
+              <Grid className='w-4 h-4' />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              onClick={() => setViewMode('list')}
+              size='sm'
+              className='smooth-hover'
+              title='List View'
+            >
+              <List className='w-4 h-4' />
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className='max-w-7xl mx-auto py-8 sm:px-6 lg:px-8'>
@@ -338,127 +576,13 @@ export default function Dashboard() {
             </nav>
           </div>
 
-          {/* Search and Controls */}
-          <div className='flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between animate-slide-in-right'>
-            <div className='relative flex-1 max-w-md'>
-              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4' />
-              <Input
-                placeholder='Search notes and folders...'
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className='pl-10 smooth-hover'
-              />
+          {/* Search Results Header */}
+          {isSearchMode && !isSearching && (
+            <div className='p-4 bg-primary/10 border border-primary/30 text-primary rounded-lg shadow-md animate-slide-in-bottom'>
+              <span className='font-semibold'>Search Results:</span> Found{' '}
+              {filteredFolders.length + filteredNotes.length} items matching "{searchQuery}"
             </div>
-            <div className='flex items-center space-x-2'>
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size='icon'
-                onClick={() => setViewMode('grid')}
-                className='smooth-hover'
-              >
-                <Grid className='w-4 h-4' />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                size='icon'
-                onClick={() => setViewMode('list')}
-                className='smooth-hover'
-              >
-                <List className='w-4 h-4' />
-              </Button>
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div className='flex flex-wrap gap-4 animate-fade-in-scale'>
-            <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
-              <DialogTrigger asChild>
-                <Button variant='primary' className='group'>
-                  <Plus className='w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200' />
-                  New Folder
-                </Button>
-              </DialogTrigger>
-              <DialogContent className='glass-effect animate-fade-in-scale'>
-                <DialogHeader>
-                  <DialogTitle>Create New Folder</DialogTitle>
-                </DialogHeader>
-                <div className='space-y-4 py-4'>
-                  <Input
-                    placeholder='Folder name'
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && createFolder()}
-                    className='smooth-hover'
-                  />
-                  <div className='flex justify-end space-x-2'>
-                    <Button variant='outline' onClick={() => setIsCreateFolderOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={createFolder} variant='primary'>
-                      Create
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={isCreateNoteOpen} onOpenChange={setIsCreateNoteOpen}>
-              <DialogTrigger asChild>
-                <Button variant='outline' className='group smooth-hover'>
-                  <Plus className='w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200' />
-                  New Note
-                </Button>
-              </DialogTrigger>
-              <DialogContent className='glass-effect animate-fade-in-scale'>
-                <DialogHeader>
-                  <DialogTitle>Create New Note</DialogTitle>
-                </DialogHeader>
-                <div className='space-y-4 py-4'>
-                  <Input
-                    placeholder='Note title'
-                    value={newNoteTitle}
-                    onChange={(e) => setNewNoteTitle(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && createNote()}
-                    className='smooth-hover'
-                  />
-                  <div className='flex justify-end space-x-2'>
-                    <Button variant='outline' onClick={() => setIsCreateNoteOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={createNote} variant='primary'>
-                      Create
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            {/* Rename Folder Dialog */}
-            <Dialog open={!!editingFolder} onOpenChange={() => cancelRenameFolder()}>
-              <DialogContent className='glass-effect animate-fade-in-scale'>
-                <DialogHeader>
-                  <DialogTitle>Rename Folder</DialogTitle>
-                </DialogHeader>
-                <div className='space-y-4 py-4'>
-                  <Input
-                    placeholder='Folder name'
-                    value={editFolderName}
-                    onChange={(e) => setEditFolderName(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && renameFolder()}
-                    className='smooth-hover'
-                  />
-                  <div className='flex justify-end space-x-2'>
-                    <Button variant='outline' onClick={cancelRenameFolder}>
-                      Cancel
-                    </Button>
-                    <Button onClick={renameFolder} variant='primary'>
-                      Rename
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          )}
 
           {/* Error Display */}
           {error && (
@@ -468,13 +592,15 @@ export default function Dashboard() {
           )}
 
           {/* Loading State */}
-          {loading ? (
+          {loading || isSearching ? (
             <div className='text-center py-12'>
               <div className='space-y-4'>
                 <div className='flex justify-center'>
                   <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
                 </div>
-                <div className='text-muted-foreground'>Loading content...</div>
+                <div className='text-muted-foreground'>
+                  {isSearching ? 'Searching...' : 'Loading content...'}
+                </div>
               </div>
             </div>
           ) : (
@@ -515,10 +641,14 @@ export default function Dashboard() {
                           </CardHeader>
                           <CardContent onClick={() => setCurrentFolderId(folder.id)}>
                             <p className='text-sm text-muted-foreground mb-2'>
-                              {folder.childrenCount} folders, {folder.notesCount} notes
+                              {folder.childrenCount || 0} folders, {folder.notesCount || 0} notes
                             </p>
+                            {isSearchMode && 'path' in folder && (
+                              <p className='text-xs text-muted-foreground mb-1'>📁 {folder.path}</p>
+                            )}
                             <p className='text-xs text-muted-foreground'>
-                              Updated: {new Date(folder.updatedAt).toLocaleDateString()}
+                              Updated: {new Date(folder.updatedAt).toLocaleDateString()}{' '}
+                              {new Date(folder.updatedAt).toLocaleTimeString()}
                             </p>
                           </CardContent>
                         </>
@@ -535,11 +665,15 @@ export default function Dashboard() {
                               {folder.name}
                             </h3>
                             <p className='text-sm text-muted-foreground'>
-                              {folder.childrenCount} folders, {folder.notesCount} notes
+                              {folder.childrenCount || 0} folders, {folder.notesCount || 0} notes
                             </p>
+                            {isSearchMode && 'path' in folder && (
+                              <p className='text-xs text-muted-foreground'>📁 {folder.path}</p>
+                            )}
                           </div>
                           <div className='text-xs text-muted-foreground'>
-                            {new Date(folder.updatedAt).toLocaleDateString()}
+                            Updated: {new Date(folder.updatedAt).toLocaleDateString()}{' '}
+                            {new Date(folder.updatedAt).toLocaleTimeString()}
                           </div>
                         </div>
                       )}
@@ -553,13 +687,15 @@ export default function Dashboard() {
                       <FolderOpen className='mr-2 h-4 w-4' />
                       Open
                     </ContextMenuItem>
-                    <ContextMenuItem
-                      onClick={() => startRenameFolder(folder)}
-                      className='smooth-hover'
-                    >
-                      <Pencil className='mr-2 h-4 w-4' />
-                      Rename
-                    </ContextMenuItem>
+                    {!isSearchMode && (
+                      <ContextMenuItem
+                        onClick={() => startRenameFolder(folder as Folder)}
+                        className='smooth-hover'
+                      >
+                        <Pencil className='mr-2 h-4 w-4' />
+                        Rename
+                      </ContextMenuItem>
+                    )}
                     <ContextMenuSeparator />
                     <ContextMenuItem
                       onClick={() => deleteFolder(folder.id)}
@@ -604,8 +740,12 @@ export default function Dashboard() {
                             <p className='text-sm text-muted-foreground truncate h-10 leading-5 mb-2'>
                               {note.contentMarkdown || <span className='italic'>No content</span>}
                             </p>
+                            {isSearchMode && 'path' in note && (
+                              <p className='text-xs text-muted-foreground mb-1'>📁 {note.path}</p>
+                            )}
                             <p className='text-xs text-muted-foreground'>
-                              Updated: {new Date(note.updatedAt).toLocaleDateString()}
+                              Updated: {new Date(note.updatedAt).toLocaleDateString()}{' '}
+                              {new Date(note.updatedAt).toLocaleTimeString()}
                             </p>
                           </CardContent>
                         </>
@@ -622,11 +762,17 @@ export default function Dashboard() {
                               {note.title}
                             </h3>
                             <p className='text-sm text-muted-foreground truncate'>
-                              {note.contentMarkdown || 'No content'}
+                              {note.contentMarkdown && note.contentMarkdown.length > 100
+                                ? `${note.contentMarkdown.substring(0, 100)}...`
+                                : note.contentMarkdown || 'No content'}
                             </p>
+                            {isSearchMode && 'path' in note && (
+                              <p className='text-xs text-muted-foreground'>📁 {note.path}</p>
+                            )}
                           </div>
                           <div className='text-xs text-muted-foreground'>
-                            {new Date(note.updatedAt).toLocaleDateString()}
+                            Updated: {new Date(note.updatedAt).toLocaleDateString()}{' '}
+                            {new Date(note.updatedAt).toLocaleTimeString()}
                           </div>
                         </div>
                       )}
@@ -653,40 +799,43 @@ export default function Dashboard() {
               ))}
 
               {/* Empty State */}
-              {filteredFolders.length === 0 && filteredNotes.length === 0 && !loading && (
-                <div className='col-span-full text-center py-16 animate-fade-in-scale'>
-                  <div className='space-y-6'>
-                    <div className='relative'>
-                      <Folder className='w-20 h-20 mx-auto text-muted-foreground/50 animate-float' />
-                      <div className='absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center'>
-                        <Plus className='w-4 h-4 text-white' />
+              {filteredFolders.length === 0 &&
+                filteredNotes.length === 0 &&
+                !loading &&
+                !isSearching && (
+                  <div className='col-span-full text-center py-16 animate-fade-in-scale'>
+                    <div className='space-y-6'>
+                      <div className='relative'>
+                        <Folder className='w-20 h-20 mx-auto text-muted-foreground/50 animate-float' />
+                        <div className='absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center'>
+                          <Plus className='w-4 h-4 text-white' />
+                        </div>
                       </div>
-                    </div>
-                    <div className='space-y-3'>
-                      <h3 className='text-2xl font-semibold'>
-                        {searchQuery ? 'No results found' : 'This folder is empty'}
-                      </h3>
-                      <p className='text-muted-foreground max-w-md mx-auto'>
-                        {searchQuery
-                          ? `No folders or notes match "${searchQuery}". Try a different search term.`
-                          : 'Create your first folder or note to get started on your knowledge journey.'}
-                      </p>
-                    </div>
-                    {!searchQuery && (
-                      <div className='flex justify-center space-x-4 pt-4'>
-                        <Button onClick={() => setIsCreateFolderOpen(true)} variant='primary'>
-                          <Plus className='w-4 h-4 mr-2' />
-                          Create Folder
-                        </Button>
-                        <Button onClick={() => setIsCreateNoteOpen(true)} variant='outline'>
-                          <Plus className='w-4 h-4 mr-2' />
-                          Create Note
-                        </Button>
+                      <div className='space-y-3'>
+                        <h3 className='text-2xl font-semibold'>
+                          {searchQuery ? 'No results found' : 'This folder is empty'}
+                        </h3>
+                        <p className='text-muted-foreground max-w-md mx-auto'>
+                          {searchQuery
+                            ? `No folders or notes match "${searchQuery}". Try a different search term.`
+                            : 'Create your first folder or note to get started on your knowledge journey.'}
+                        </p>
                       </div>
-                    )}
+                      {!searchQuery && (
+                        <div className='flex justify-center space-x-4 pt-4'>
+                          <Button onClick={() => setIsCreateFolderOpen(true)} variant='default'>
+                            <Plus className='w-4 h-4 mr-2' />
+                            Create Folder
+                          </Button>
+                          <Button onClick={() => setIsCreateNoteOpen(true)} variant='outline'>
+                            <Plus className='w-4 h-4 mr-2' />
+                            Create Note
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           )}
         </div>

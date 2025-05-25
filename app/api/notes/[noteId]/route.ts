@@ -14,7 +14,7 @@ const updateNoteSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { noteId: string } }
+  { params }: { params: Promise<{ noteId: string }> }
 ) {
   try {
     const authResult = await verifyJWT(request);
@@ -69,7 +69,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { noteId: string } }
+  { params }: { params: Promise<{ noteId: string }> }
 ) {
   try {
     const authResult = await verifyJWT(request);
@@ -178,7 +178,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { noteId: string } }
+  { params }: { params: Promise<{ noteId: string }> }
 ) {
   try {
     const authResult = await verifyJWT(request);

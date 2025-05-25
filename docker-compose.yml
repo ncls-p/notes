@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # OPTIONAL but Recommended: Reverse Proxy (e.g., Nginx or Caddy)
   # nginx-proxy:
@@ -19,13 +17,14 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       # Frontend specific (can be prefixed with NEXT_PUBLIC_)
-      NEXT_PUBLIC_APP_NAME: "MyNotesApp"
+      NEXT_PUBLIC_APP_NAME: 'MyNotesApp'
       # Backend specific (not prefixed with NEXT_PUBLIC_ unless needed by client)
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
       APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY} # For encrypting API keys and other sensitive data
       # Logging/Metrics/Tracing config
       LOG_LEVEL: ${LOG_LEVEL:-info}
@@ -38,14 +37,14 @@ services:
         condition: service_healthy
       # redis: # If using Redis for queues/caching
       #   condition: service_healthy
-    volumes:
-      - .:/app # Mount current directory for development; adjust for production
-      - /app/node_modules # Exclude node_modules from host mount
-      - /app/.next # Exclude .next from host mount
-      # - app_data:/app/data # For temporary files, logs if not sent to stdout and if needed
+    # volumes:
+    # - .:/app # Mount current directory for development; adjust for production
+    # - /app/node_modules # Exclude node_modules from host mount
+    # - /app/.next # Exclude .next from host mount
+    # - app_data:/app/data # For temporary files, logs if not sent to stdout and if needed
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"] # Assuming a /api/health endpoint
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health'] # Assuming a /api/health endpoint
       interval: 30s
       timeout: 10s
       retries: 3
@@ -55,7 +54,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg16 # Pre-built image with pgvector for Postgres 16
     ports:
-      - "${POSTGRES_PORT:-5432}:5432" # Optional: Expose Postgres for local tools
+      - '${POSTGRES_PORT:-5432}:5432' # Optional: Expose Postgres for local tools
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -64,7 +63,7 @@ services:
       - postgres_data:/var/lib/postgresql/data # Persistent data volume
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 10s
       timeout: 5s
       retries: 5
