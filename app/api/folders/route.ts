@@ -14,16 +14,15 @@ const createFolderSchema = z.object({
 // Schema for listing folders
 const listFoldersSchema = z.object({
   parentId: z.string().uuid().optional().nullable(),
+  sortBy: z.enum(['name', 'createdAt', 'updatedAt']).optional().default('name'),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -96,17 +95,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 });
     }
 
     console.error('Error creating folder:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -114,25 +107,40 @@ export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const parentId = searchParams.get('parentId');
+    const sortBy = searchParams.get('sortBy');
+    const sortOrder = searchParams.get('sortOrder');
 
-    // Validate parentId if provided
-    const queryData = listFoldersSchema.parse({
+    console.log('[API/Folders] Received query params:', { parentId, sortBy, sortOrder });
+
+    // Validate query parameters
+    const validatedQuery = listFoldersSchema.safeParse({
       parentId: parentId === 'null' ? null : parentId,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
     });
 
+    if (!validatedQuery.success) {
+      return NextResponse.json(
+        { error: 'Invalid query parameters', details: validatedQuery.error.errors },
+        { status: 400 }
+      );
+    }
+    const {
+      parentId: validParentId,
+      sortBy: validSortBy,
+      sortOrder: validSortOrder,
+    } = validatedQuery.data;
+
     // If parentId is provided and not null, verify the parent folder exists and belongs to the user
-    if (queryData.parentId) {
+    if (validParentId) {
       const parentFolder = await prisma.folder.findFirst({
         where: {
-          id: queryData.parentId,
+          id: validParentId,
           ownerId: authResult.userId,
         },
       });
@@ -145,10 +153,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const orderByClause: { [key: string]: 'asc' | 'desc' } = {};
+    if (validSortBy) {
+      orderByClause[validSortBy] = validSortOrder;
+    } else {
+      orderByClause['name'] = 'asc'; // Default sort
+    }
+    console.log('[API/Folders] Constructed orderBy clause:', orderByClause);
+
     const folders = await prisma.folder.findMany({
       where: {
         ownerId: authResult.userId,
-        parentId: queryData.parentId,
+        parentId: validParentId,
       },
       include: {
         parent: {
@@ -164,13 +180,11 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy: orderByClause,
     });
 
     return NextResponse.json(
-      folders.map(folder => ({
+      folders.map((folder) => ({
         id: folder.id,
         name: folder.name,
         parentId: folder.parentId,
@@ -190,9 +204,6 @@ export async function GET(request: NextRequest) {
     }
 
     console.error('Error fetching folders:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

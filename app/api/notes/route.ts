@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 import { verifyJWT } from '@/lib/auth/serverAuth';
-import { apiLogger, logError, logDatabaseOperation, logPerformance, logBusinessEvent } from '@/lib/logger';
+import {
+  apiLogger,
+  logError,
+  logDatabaseOperation,
+  logPerformance,
+  logBusinessEvent,
+} from '@/lib/logger';
 
 const prisma = new PrismaClient();
 
@@ -16,6 +22,8 @@ const createNoteSchema = z.object({
 // Schema for listing notes
 const listNotesSchema = z.object({
   folderId: z.string().uuid().optional().nullable(),
+  sortBy: z.enum(['title', 'createdAt', 'updatedAt']).optional().default('title'),
+  sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
 });
 
 export async function POST(request: NextRequest) {
@@ -26,7 +34,7 @@ export async function POST(request: NextRequest) {
   const logger = apiLogger.child({
     requestId,
     operation: 'create_note',
-    userId
+    userId,
   });
 
   logger.info('Note creation started');
@@ -35,10 +43,7 @@ export async function POST(request: NextRequest) {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
       logger.warn({ reason: 'auth_failed' }, 'Note creation failed: unauthorized');
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -46,10 +51,14 @@ export async function POST(request: NextRequest) {
     try {
       var validatedData = createNoteSchema.parse(body);
     } catch (validationError) {
-      logger.warn({
-        validationErrors: validationError instanceof z.ZodError ? validationError.errors : 'unknown',
-        title: body.title ? body.title.substring(0, 20) + '...' : 'missing'
-      }, 'Note creation validation failed');
+      logger.warn(
+        {
+          validationErrors:
+            validationError instanceof z.ZodError ? validationError.errors : 'unknown',
+          title: body.title ? body.title.substring(0, 20) + '...' : 'missing',
+        },
+        'Note creation validation failed'
+      );
 
       if (validationError instanceof z.ZodError) {
         return NextResponse.json(
@@ -60,11 +69,15 @@ export async function POST(request: NextRequest) {
       throw validationError;
     }
 
-    logger.debug({
-      title: validatedData.title.substring(0, 50) + (validatedData.title.length > 50 ? '...' : ''),
-      folderId: validatedData.folderId,
-      contentLength: validatedData.contentMarkdown?.length || 0
-    }, 'Note data validated');
+    logger.debug(
+      {
+        title:
+          validatedData.title.substring(0, 50) + (validatedData.title.length > 50 ? '...' : ''),
+        folderId: validatedData.folderId,
+        contentLength: validatedData.contentMarkdown?.length || 0,
+      },
+      'Note data validated'
+    );
 
     // If folderId is provided, verify the folder exists and belongs to the user
     if (validatedData.folderId) {
@@ -77,19 +90,19 @@ export async function POST(request: NextRequest) {
       });
       logDatabaseOperation('findFirst', 'folder', Date.now() - folderStartTime, {
         folderId: validatedData.folderId,
-        userId: authResult.userId
+        userId: authResult.userId,
       });
 
       if (!folder) {
-        logger.warn({
-          folderId: validatedData.folderId,
-          userId: authResult.userId
-        }, 'Note creation failed: folder not found or access denied');
-
-        return NextResponse.json(
-          { error: 'Folder not found or access denied' },
-          { status: 404 }
+        logger.warn(
+          {
+            folderId: validatedData.folderId,
+            userId: authResult.userId,
+          },
+          'Note creation failed: folder not found or access denied'
         );
+
+        return NextResponse.json({ error: 'Folder not found or access denied' }, { status: 404 });
       }
     }
 
@@ -105,15 +118,18 @@ export async function POST(request: NextRequest) {
     logDatabaseOperation('findFirst', 'note', Date.now() - duplicateCheckStartTime, {
       operation: 'duplicate_check',
       title: validatedData.title.substring(0, 20) + '...',
-      folderId: validatedData.folderId
+      folderId: validatedData.folderId,
     });
 
     if (existingNote) {
-      logger.warn({
-        title: validatedData.title.substring(0, 50) + '...',
-        folderId: validatedData.folderId,
-        existingNoteId: existingNote.id
-      }, 'Note creation failed: duplicate title in folder');
+      logger.warn(
+        {
+          title: validatedData.title.substring(0, 50) + '...',
+          folderId: validatedData.folderId,
+          existingNoteId: existingNote.id,
+        },
+        'Note creation failed: duplicate title in folder'
+      );
 
       return NextResponse.json(
         { error: 'A note with this title already exists in this location' },
@@ -142,16 +158,19 @@ export async function POST(request: NextRequest) {
     logDatabaseOperation('create', 'note', Date.now() - createStartTime, {
       noteId: note.id,
       title: note.title.substring(0, 20) + '...',
-      folderId: note.folderId
+      folderId: note.folderId,
     });
 
-    logger.info({
-      noteId: note.id,
-      title: note.title.substring(0, 50) + (note.title.length > 50 ? '...' : ''),
-      folderId: note.folderId,
-      contentLength: note.contentMarkdown?.length || 0,
-      totalDuration: Date.now() - startTime,
-    }, 'Note created successfully');
+    logger.info(
+      {
+        noteId: note.id,
+        title: note.title.substring(0, 50) + (note.title.length > 50 ? '...' : ''),
+        folderId: note.folderId,
+        contentLength: note.contentMarkdown?.length || 0,
+        totalDuration: Date.now() - startTime,
+      },
+      'Note created successfully'
+    );
 
     logBusinessEvent('note_created', authResult.userId, {
       requestId,
@@ -182,10 +201,7 @@ export async function POST(request: NextRequest) {
       duration: Date.now() - startTime,
     });
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -197,86 +213,100 @@ export async function GET(request: NextRequest) {
   const logger = apiLogger.child({
     requestId,
     operation: 'list_notes',
-    userId
+    userId,
   });
 
-  try {
-    console.log('[DEBUG] About to log: Notes listing started');
-    logger.info('Notes listing started');
-    console.log('[DEBUG] Successfully logged: Notes listing started');
-  } catch (error) {
-    console.log('[DEBUG] Error logging Notes listing started:', error);
-  }
+  logger.info('Note listing started');
 
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
-      logger.warn({ reason: 'auth_failed' }, 'Notes listing failed: unauthorized');
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      logger.warn({ reason: 'auth_failed' }, 'Note listing failed: unauthorized');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const folderId = searchParams.get('folderId');
+    const sortBy = searchParams.get('sortBy');
+    const sortOrder = searchParams.get('sortOrder');
 
-    // Validate folderId if provided
-    let queryData;
-    try {
-      queryData = listNotesSchema.parse({
-        folderId: folderId === 'null' ? null : folderId,
-      });
-    } catch (validationError) {
-      logger.warn({
-        folderId,
-        validationErrors: validationError instanceof z.ZodError ? validationError.errors : 'unknown'
-      }, 'Notes listing validation failed');
+    logger.info('[API/Notes] Received query params:', { folderId, sortBy, sortOrder });
 
-      if (validationError instanceof z.ZodError) {
-        return NextResponse.json(
-          { error: 'Invalid query parameters', details: validationError.errors },
-          { status: 400 }
-        );
-      }
-      throw validationError;
+    // Validate query parameters
+    const validatedQuery = listNotesSchema.safeParse({
+      folderId: folderId === 'null' ? null : folderId,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+    });
+
+    if (!validatedQuery.success) {
+      logger.warn(
+        {
+          validationErrors: validatedQuery.error.errors,
+          queryParams: { folderId, sortBy, sortOrder },
+        },
+        'Note listing validation failed'
+      );
+      return NextResponse.json(
+        { error: 'Invalid query parameters', details: validatedQuery.error.errors },
+        { status: 400 }
+      );
     }
 
-    logger.debug({ folderId: queryData.folderId }, 'Query parameters validated');
+    const {
+      folderId: validFolderId,
+      sortBy: validSortBy,
+      sortOrder: validSortOrder,
+    } = validatedQuery.data;
+
+    logger.debug(
+      {
+        folderId: validFolderId,
+        sortBy: validSortBy,
+        sortOrder: validSortOrder,
+      },
+      'Note listing parameters validated'
+    );
 
     // If folderId is provided and not null, verify the folder exists and belongs to the user
-    if (queryData.folderId) {
-      const folderStartTime = Date.now();
+    if (validFolderId) {
+      const folderCheckStartTime = Date.now();
       const folder = await prisma.folder.findFirst({
         where: {
-          id: queryData.folderId,
+          id: validFolderId,
           ownerId: authResult.userId,
         },
       });
-      logDatabaseOperation('findFirst', 'folder', Date.now() - folderStartTime, {
-        folderId: queryData.folderId,
-        userId: authResult.userId
+      logDatabaseOperation('findFirst', 'folder', Date.now() - folderCheckStartTime, {
+        folderId: validFolderId,
+        userId: authResult.userId,
       });
 
       if (!folder) {
-        logger.warn({
-          folderId: queryData.folderId,
-          userId: authResult.userId
-        }, 'Notes listing failed: folder not found or access denied');
-
-        return NextResponse.json(
-          { error: 'Folder not found or access denied' },
-          { status: 404 }
+        logger.warn(
+          {
+            folderId: validFolderId,
+            userId: authResult.userId,
+          },
+          'Note listing failed: folder not found or access denied'
         );
+        return NextResponse.json({ error: 'Folder not found or access denied' }, { status: 404 });
       }
     }
 
-    // Fetch notes
-    const fetchStartTime = Date.now();
+    const orderByClause: { [key: string]: 'asc' | 'desc' } = {};
+    if (validSortBy) {
+      orderByClause[validSortBy] = validSortOrder;
+    } else {
+      orderByClause['title'] = 'asc'; // Default sort
+    }
+    logger.info('[API/Notes] Constructed orderBy clause:', orderByClause);
+
+    const notesFetchStartTime = Date.now();
     const notes = await prisma.note.findMany({
       where: {
         ownerId: authResult.userId,
-        folderId: queryData.folderId,
+        folderId: validFolderId,
       },
       include: {
         folder: {
@@ -286,35 +316,35 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: {
-        updatedAt: 'desc',
-      },
+      orderBy: orderByClause,
     });
-    logDatabaseOperation('findMany', 'note', Date.now() - fetchStartTime, {
-      folderId: queryData.folderId,
-      userId: authResult.userId,
-      resultCount: notes.length
+    logDatabaseOperation('findMany', 'note', Date.now() - notesFetchStartTime, {
+      count: notes.length,
+      folderId: validFolderId,
+      sortBy: validSortBy,
+      sortOrder: validSortOrder,
     });
 
-    try {
-      console.log('[DEBUG] About to log: Notes listed successfully');
-      logger.info({
-        folderId: queryData.folderId,
-        notesCount: notes.length,
+    logger.info(
+      {
+        count: notes.length,
+        folderId: validFolderId,
+        sortBy: validSortBy,
+        sortOrder: validSortOrder,
         totalDuration: Date.now() - startTime,
-      }, 'Notes listed successfully');
-      console.log('[DEBUG] Successfully logged: Notes listed successfully');
-    } catch (error) {
-      console.log('[DEBUG] Error logging Notes listed successfully:', error);
-    }
+      },
+      'Notes listed successfully'
+    );
 
     logPerformance(logger, 'list_notes', startTime, {
-      notesCount: notes.length,
-      folderId: queryData.folderId,
+      count: notes.length,
+      folderId: validFolderId,
+      sortBy: validSortBy,
+      sortOrder: validSortOrder,
     });
 
     return NextResponse.json(
-      notes.map(note => ({
+      notes.map((note) => ({
         id: note.id,
         title: note.title,
         contentMarkdown: note.contentMarkdown,
@@ -332,9 +362,6 @@ export async function GET(request: NextRequest) {
       duration: Date.now() - startTime,
     });
 
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
