@@ -342,7 +342,7 @@ export default function NoteEditor() {
               <Button
                 onClick={saveNote}
                 disabled={saving || !hasUnsavedChanges}
-                variant='primary'
+                variant='default'
                 className='group'
               >
                 {saving ? (

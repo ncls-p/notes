@@ -35,12 +35,20 @@ COPY --from=base /app/public ./public
 COPY --from=base /app/.next ./.next
 COPY --from=base /app/node_modules ./node_modules
 COPY --from=base /app/package.json ./package.json
+COPY --from=base /app/prisma ./prisma
+COPY --from=base /app/scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
+
+# Make the entrypoint script executable
+RUN chmod +x ./scripts/docker-entrypoint.sh
 
 # Expose the port Next.js runs on
 EXPOSE 3000
 
 # Set environment variable for production
 ENV NODE_ENV=production
+
+# Set the entrypoint to run migrations before starting the app
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 
 # Command to run the application
 CMD ["npm", "start"]

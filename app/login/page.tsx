@@ -245,7 +245,7 @@ export default function LoginPage() {
                   disabled={loading}
                   data-testid='login-button'
                   className='w-full group'
-                  variant='primary'
+                  variant='default'
                   size='lg'
                 >
                   {loading ? (

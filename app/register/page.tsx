@@ -342,7 +342,7 @@ export default function RegisterPage() {
                   disabled={loading}
                   data-testid='register-button'
                   className='w-full group'
-                  variant='primary'
+                  variant='default'
                   size='lg'
                 >
                   {loading ? (

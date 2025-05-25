@@ -98,7 +98,7 @@ export default function HomePage() {
 
           {/* CTA Buttons */}
           <div className='flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 pt-8'>
-            <Button asChild variant='primary' size='lg' className='group animate-slide-in-left'>
+            <Button asChild variant='default' size='lg' className='group animate-slide-in-left'>
               <Link href='/login' className='flex items-center'>
                 Get Started
                 <ArrowRight className='ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform' />

@@ -13,7 +13,7 @@ const updateFolderSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { folderId: string } }
+  { params }: { params: Promise<{ folderId: string }> }
 ) {
   try {
     const authResult = await verifyJWT(request);
@@ -24,7 +24,7 @@ export async function GET(
       );
     }
 
-    const { folderId } = params;
+    const { folderId } = await params;
 
     const folder = await prisma.folder.findFirst({
       where: {
@@ -75,7 +75,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { folderId: string } }
+  { params }: { params: Promise<{ folderId: string }> }
 ) {
   try {
     const authResult = await verifyJWT(request);
@@ -200,7 +200,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { folderId: string } }
+  { params }: { params: Promise<{ folderId: string }> }
 ) {
   try {
     const authResult = await verifyJWT(request);

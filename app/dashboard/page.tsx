@@ -389,7 +389,7 @@ export default function Dashboard() {
           {/* Create Folder Dialog */}
           <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
             <DialogTrigger asChild>
-              <Button variant='primary' className='group'>
+              <Button variant='default' className='group'>
                 <Plus className='w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200' />
                 New Folder
               </Button>
@@ -410,7 +410,7 @@ export default function Dashboard() {
                   <Button variant='outline' onClick={() => setIsCreateFolderOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={createFolder} variant='primary'>
+                  <Button onClick={createFolder} variant='default'>
                     Create
                   </Button>
                 </div>
@@ -442,7 +442,7 @@ export default function Dashboard() {
                   <Button variant='outline' onClick={() => setIsCreateNoteOpen(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={createNote} variant='primary'>
+                  <Button onClick={createNote} variant='default'>
                     Create
                   </Button>
                 </div>
@@ -823,7 +823,7 @@ export default function Dashboard() {
                       </div>
                       {!searchQuery && (
                         <div className='flex justify-center space-x-4 pt-4'>
-                          <Button onClick={() => setIsCreateFolderOpen(true)} variant='primary'>
+                          <Button onClick={() => setIsCreateFolderOpen(true)} variant='default'>
                             <Plus className='w-4 h-4 mr-2' />
                             Create Folder
                           </Button>
