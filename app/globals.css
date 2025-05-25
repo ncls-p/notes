@@ -1,124 +1,6 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
-
-/* Custom animations and utilities */
-@keyframes slideInFromBottom {
-  0% {
-    transform: translateY(100px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideInFromTop {
-  0% {
-    transform: translateY(-100px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideInFromLeft {
-  0% {
-    transform: translateX(-100px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideInFromRight {
-  0% {
-    transform: translateX(100px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeInScale {
-  0% {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes pulse-soft {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-.animate-slide-in-bottom {
-  animation: slideInFromBottom 0.6s ease-out;
-}
-
-.animate-slide-in-top {
-  animation: slideInFromTop 0.6s ease-out;
-}
-
-.animate-slide-in-left {
-  animation: slideInFromLeft 0.6s ease-out;
-}
-
-.animate-slide-in-right {
-  animation: slideInFromRight 0.6s ease-out;
-}
-
-.animate-fade-in-scale {
-  animation: fadeInScale 0.4s ease-out;
-}
-
-.animate-shimmer {
-  animation: shimmer 2s infinite;
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-pulse-soft {
-  animation: pulse-soft 2s ease-in-out infinite;
-}
 
 /* Utility classes for smooth interactions */
 .smooth-hover {
@@ -142,67 +24,67 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --background: 0 0% 100%; /* White */
+    --foreground: 220 13% 20%; /* Dark Cool Gray */
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 220 13% 20%; /* Dark Cool Gray */
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 220 13% 20%; /* Dark Cool Gray */
+    --primary: 220 70% 50%; /* Cool Blue */
+    --primary-foreground: 0 0% 100%; /* White */
+    --secondary: 220 10% 95%; /* Light Cool Gray */
+    --secondary-foreground: 220 13% 20%; /* Dark Cool Gray */
+    --muted: 220 10% 90%; /* Medium Cool Gray */
+    --muted-foreground: 220 10% 45%; /* Darker Medium Cool Gray */
+    --accent: 220 70% 50%; /* Cool Blue */
+    --accent-foreground: 0 0% 100%; /* White */
+    --destructive: 0 70% 50%; /* Red */
+    --destructive-foreground: 0 0% 100%; /* White */
+    --border: 220 10% 85%; /* Light Border Gray */
+    --input: 220 10% 85%; /* Light Border Gray */
+    --ring: 220 70% 50%; /* Cool Blue */
     --radius: 0.5rem;
 
-    /* Custom sidebar variables from original file - retained */
-    --sidebar: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(240 5.9% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(240 4.8% 95.9%);
-    --sidebar-accent-foreground: hsl(240 5.9% 10%);
-    --sidebar-border: hsl(220 13% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
+    /* Simplified sidebar variables */
+    --sidebar: 220 10% 98%; /* Very Light Cool Gray */
+    --sidebar-foreground: 220 13% 20%; /* Dark Cool Gray */
+    --sidebar-primary: 220 70% 50%; /* Cool Blue */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 220 10% 90%; /* Medium Cool Gray */
+    --sidebar-accent-foreground: 220 13% 20%; /* Dark Cool Gray */
+    --sidebar-border: 220 10% 85%; /* Light Border Gray */
+    --sidebar-ring: 220 70% 50%; /* Cool Blue */
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --background: 220 13% 10%; /* Darkest Cool Blue/Gray */
+    --foreground: 0 0% 98%; /* Almost White */
+    --card: 220 13% 15%; /* Dark Cool Blue/Gray */
+    --card-foreground: 0 0% 98%; /* Almost White */
+    --popover: 220 13% 15%; /* Dark Cool Blue/Gray */
+    --popover-foreground: 0 0% 98%; /* Almost White */
+    --primary: 220 70% 60%; /* Brighter Cool Blue for Dark Mode */
+    --primary-foreground: 220 13% 10%; /* Darkest Cool Blue/Gray */
+    --secondary: 220 13% 25%; /* Medium Dark Cool Blue/Gray */
+    --secondary-foreground: 0 0% 98%; /* Almost White */
+    --muted: 220 13% 20%; /* Darker Cool Blue/Gray */
+    --muted-foreground: 220 10% 65%; /* Lighter Medium Cool Gray */
+    --accent: 220 70% 60%; /* Brighter Cool Blue for Dark Mode */
+    --accent-foreground: 220 13% 10%; /* Darkest Cool Blue/Gray */
+    --destructive: 0 70% 60%; /* Brighter Red for Dark Mode */
+    --destructive-foreground: 220 13% 10%; /* Darkest Cool Blue/Gray */
+    --border: 220 13% 30%; /* Dark Border Gray */
+    --input: 220 13% 30%; /* Dark Border Gray */
+    --ring: 220 70% 60%; /* Brighter Cool Blue for Dark Mode */
 
-    /* Custom sidebar variables from original file - retained for dark mode */
-    --sidebar: hsl(240 5.9% 10%);
-    --sidebar-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-primary: hsl(224.3 76.3% 48%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(240 3.7% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(240 3.7% 15.9%);
+    /* Simplified sidebar variables for dark mode */
+    --sidebar: 220 13% 12%; /* Slightly Lighter Darkest Cool Blue/Gray */
+    --sidebar-foreground: 0 0% 98%; /* Almost White */
+    --sidebar-primary: 220 70% 60%; /* Brighter Cool Blue */
+    --sidebar-primary-foreground: 220 13% 10%; /* Darkest Cool Blue/Gray */
+    --sidebar-accent: 220 13% 20%; /* Darker Cool Blue/Gray */
+    --sidebar-accent-foreground: 0 0% 98%; /* Almost White */
+    --sidebar-border: 220 13% 30%; /* Dark Border Gray */
   }
 }
 
