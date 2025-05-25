@@ -6,7 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Folder, FileText, Plus, Trash2, Edit, LogOut } from 'lucide-react';
+import { Folder, FileText, Plus, Trash2, Edit, LogOut, MoreHorizontal, Pencil, FolderOpen, ExternalLink } from 'lucide-react';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import apiClient from '@/lib/apiClient';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -374,91 +381,80 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Folders */}
               {folders.map((folder) => (
-                <Card key={folder.id} className="bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-lg dark:backdrop-blur-sm transition-all hover:shadow-xl dark:hover:shadow-slate-600/50 hover:border-slate-300 dark:hover:border-slate-500 cursor-pointer">
-                  <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-                    <div
-                      className="flex items-center space-x-3 flex-grow min-w-0"
-                      onClick={() => setCurrentFolderId(folder.id)}
-                    >
-                      <Folder className="w-6 h-6 text-primary shrink-0" />
-                      <CardTitle className="text-lg font-semibold truncate" title={folder.name}>{folder.name}</CardTitle>
-                    </div>
-                    <div className="flex space-x-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/50 w-8 h-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          startRenameFolder(folder);
-                        }}
-                      >
-                        <Edit className="w-4 h-4" />
-                         <span className="sr-only">Rename Folder</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 w-8 h-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteFolder(folder.id);
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="sr-only">Delete Folder</span>
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent onClick={() => setCurrentFolderId(folder.id)}>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                      {folder.childrenCount} folders, {folder.notesCount} notes
-                    </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                      Updated: {new Date(folder.updatedAt).toLocaleDateString()}
-                    </p>
-                  </CardContent>
-                </Card>
+                <ContextMenu key={folder.id}>
+                  <ContextMenuTrigger>
+                    <Card className="bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-lg dark:backdrop-blur-sm transition-all hover:shadow-xl dark:hover:shadow-slate-600/50 hover:border-slate-300 dark:hover:border-slate-500 cursor-pointer">
+                      <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0" onClick={() => setCurrentFolderId(folder.id)}>
+                        <div
+                          className="flex items-center space-x-3 flex-grow min-w-0"
+                        >
+                          <Folder className="w-6 h-6 text-primary shrink-0" />
+                          <CardTitle className="text-lg font-semibold truncate" title={folder.name}>{folder.name}</CardTitle>
+                        </div>
+                        {/* Placeholder for context menu indicator if desired, or remove button div */}
+                      </CardHeader>
+                      <CardContent onClick={() => setCurrentFolderId(folder.id)}>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          {folder.childrenCount} folders, {folder.notesCount} notes
+                        </p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                          Updated: {new Date(folder.updatedAt).toLocaleDateString()}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent className="w-48 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                    <ContextMenuItem onClick={() => setCurrentFolderId(folder.id)} className="hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                      <FolderOpen className="mr-2 h-4 w-4" />
+                      Open
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={() => startRenameFolder(folder)} className="hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Rename
+                    </ContextMenuItem>
+                    <ContextMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                    <ContextMenuItem onClick={() => deleteFolder(folder.id)} className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
               ))}
 
               {/* Notes */}
               {notes.map((note) => (
-                <Card key={note.id} className="bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-lg dark:backdrop-blur-sm transition-all hover:shadow-xl dark:hover:shadow-slate-600/50 hover:border-slate-300 dark:hover:border-slate-500">
-                  <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-                     <div className="flex items-center space-x-3 flex-grow min-w-0">
-                        <FileText className="w-6 h-6 text-primary shrink-0" />
-                        <CardTitle className="text-lg font-semibold truncate" title={note.title}>{note.title}</CardTitle>
-                    </div>
-                    <div className="flex space-x-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/50 w-8 h-8"
-                        onClick={() => window.location.href = `/notes/${note.id}`}
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span className="sr-only">Edit Note</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-100 dark:hover:bg-slate-700/50 w-8 h-8"
-                        onClick={() => deleteNote(note.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span className="sr-only">Delete Note</span>
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent onClick={() => window.location.href = `/notes/${note.id}`} className="cursor-pointer">
-                    <p className="text-sm text-slate-600 dark:text-slate-400 truncate h-10 leading-5">
-                      {note.contentMarkdown || <span className="italic">No content</span>}
-                    </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
-                      Updated: {new Date(note.updatedAt).toLocaleDateString()}
-                    </p>
-                  </CardContent>
-                </Card>
+                <ContextMenu key={note.id}>
+                  <ContextMenuTrigger>
+                    <Card className="bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 shadow-lg dark:backdrop-blur-sm transition-all hover:shadow-xl dark:hover:shadow-slate-600/50 hover:border-slate-300 dark:hover:border-slate-500">
+                      <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0" onClick={() => window.location.href = `/notes/${note.id}`}>
+                         <div className="flex items-center space-x-3 flex-grow min-w-0">
+                            <FileText className="w-6 h-6 text-primary shrink-0" />
+                            <CardTitle className="text-lg font-semibold truncate" title={note.title}>{note.title}</CardTitle>
+                        </div>
+                         {/* Placeholder for context menu indicator if desired, or remove button div */}
+                      </CardHeader>
+                      <CardContent onClick={() => window.location.href = `/notes/${note.id}`} className="cursor-pointer">
+                        <p className="text-sm text-slate-600 dark:text-slate-400 truncate h-10 leading-5">
+                          {note.contentMarkdown || <span className="italic">No content</span>}
+                        </p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+                          Updated: {new Date(note.updatedAt).toLocaleDateString()}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent className="w-48 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+                    <ContextMenuItem onClick={() => window.location.href = `/notes/${note.id}`} className="hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Edit / View
+                    </ContextMenuItem>
+                    <ContextMenuSeparator className="bg-slate-200 dark:bg-slate-700" />
+                    <ContextMenuItem onClick={() => deleteNote(note.id)} className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
               ))}
 
               {/* Empty State */}

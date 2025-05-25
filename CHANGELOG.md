@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2-alpha.1] - 2025-05-25
+
+### Added
+- **Dashboard Context Menus:**
+  - Implemented context menus (right-click) for folder and note cards in the [`/dashboard`](app/dashboard/page.tsx:1) for quicker access to actions (Open, Rename, Edit/View, Delete).
+  - Imported and utilized `ContextMenu` components from Shadcn UI ([`components/ui/context-menu.tsx`](components/ui/context-menu.tsx:1)).
+
+### Changed
+- **Dashboard UI:**
+  - Removed inline action buttons (Edit, Delete) from folder and note cards on the [`/dashboard`](app/dashboard/page.tsx:1) as functionality is now available via context menus.
+
+### Fixed
+- **Dashboard React Key Warning:**
+  - Corrected React "missing key prop" warning by moving the `key` prop to the outermost `ContextMenu` component in folder and note list rendering on [`/dashboard`](app/dashboard/page.tsx:378).
+- **API Folder Retrieval:**
+  - Added a `GET` handler to [`app/api/folders/[folderId]/route.ts`](app/api/folders/[folderId]/route.ts:15) to allow fetching individual folder details, resolving a "Method Not Allowed" error that prevented breadcrumb navigation from loading correctly on the [`/dashboard`](app/dashboard/page.tsx:62).
+
 ## [0.3.1-alpha.1] - 2025-05-25
 
 ### Added

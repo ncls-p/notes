@@ -11,6 +11,68 @@ const updateFolderSchema = z.object({
   parentId: z.string().uuid().optional().nullable(),
 });
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { folderId: string } }
+) {
+  try {
+    const authResult = await verifyJWT(request);
+    if (!authResult.success) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { folderId } = params;
+
+    const folder = await prisma.folder.findFirst({
+      where: {
+        id: folderId,
+        ownerId: authResult.userId,
+      },
+      include: {
+        parent: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        _count: {
+          select: {
+            children: true,
+            notes: true,
+          },
+        },
+      },
+    });
+
+    if (!folder) {
+      return NextResponse.json(
+        { error: 'Folder not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      id: folder.id,
+      name: folder.name,
+      parentId: folder.parentId,
+      parent: folder.parent,
+      childrenCount: folder._count.children,
+      notesCount: folder._count.notes,
+      createdAt: folder.createdAt,
+      updatedAt: folder.updatedAt,
+    });
+  } catch (error) {
+    console.error('Error fetching folder:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: { folderId: string } }
