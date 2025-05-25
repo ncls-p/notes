@@ -1,7 +1,9 @@
-import pino from 'pino';
+import pino from "pino";
 
 // Define log levels and their numeric values
-const logLevels = {
+const _LOG_LEVEL = process.env.LOG_LEVEL || "info";
+
+const _logLevels = {
   fatal: 60,
   error: 50,
   warn: 40,
@@ -12,8 +14,8 @@ const logLevels = {
 
 // Create base logger configuration
 const createLogger = () => {
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const logLevel = process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info');
+  const isDevelopment = process.env.NODE_ENV === "development";
+  const logLevel = process.env.LOG_LEVEL || (isDevelopment ? "debug" : "info");
 
   const baseConfig = {
     level: logLevel,
@@ -25,26 +27,28 @@ const createLogger = () => {
     },
     redact: {
       paths: [
-        'password',
-        'password_hash',
-        'accessToken',
-        'refreshToken',
-        'authorization',
-        'cookie',
-        '*.password',
-        '*.password_hash',
-        '*.accessToken',
-        '*.refreshToken',
-        'req.headers.authorization',
-        'req.headers.cookie',
+        "password",
+        "password_hash",
+        "accessToken",
+        "refreshToken",
+        "authorization",
+        "cookie",
+        "*.password",
+        "*.password_hash",
+        "*.accessToken",
+        "*.refreshToken",
+        "req.headers.authorization",
+        "req.headers.cookie",
       ],
-      censor: '[REDACTED]',
+      censor: "[REDACTED]",
     },
   };
 
   // Development configuration - temporarily disable pino-pretty to diagnose worker issues
   if (isDevelopment) {
-    console.log('[DEBUG] Creating development logger without pino-pretty transport');
+    console.log(
+      "[DEBUG] Creating development logger without pino-pretty transport",
+    );
     return pino({
       ...baseConfig,
       // Temporarily comment out pino-pretty transport to test if it's causing worker crashes
@@ -64,9 +68,9 @@ const createLogger = () => {
   return pino({
     ...baseConfig,
     base: {
-      service: 'notes-app',
-      version: process.env.npm_package_version || '0.1.0',
-      environment: process.env.NODE_ENV || 'production',
+      service: "notes-app",
+      version: process.env.npm_package_version || "0.1.0",
+      environment: process.env.NODE_ENV || "production",
     },
   });
 };
@@ -75,18 +79,22 @@ const createLogger = () => {
 export const logger = createLogger();
 
 // Create specialized loggers for different modules
-export const authLogger = logger.child({ module: 'auth' });
-export const apiLogger = logger.child({ module: 'api' });
-export const dbLogger = logger.child({ module: 'database' });
-export const middlewareLogger = logger.child({ module: 'middleware' });
+export const authLogger = logger.child({ module: "auth" });
+export const apiLogger = logger.child({ module: "api" });
+export const dbLogger = logger.child({ module: "database" });
+export const middlewareLogger = logger.child({ module: "middleware" });
 
 // Utility function to create request-scoped logger
-export const createRequestLogger = (requestId: string, method: string, url: string) => {
+export const createRequestLogger = (
+  requestId: string,
+  method: string,
+  url: string,
+) => {
   return logger.child({
     requestId,
     method,
     url,
-    module: 'request',
+    module: "request",
   });
 };
 
@@ -95,94 +103,78 @@ export const logPerformance = (
   logger: pino.Logger,
   operation: string,
   startTime: number,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>,
 ) => {
-  try {
-    const duration = Date.now() - startTime;
-    // Create a safe copy of metadata to avoid circular references
-    const safeMetadata = metadata ? JSON.parse(JSON.stringify(metadata)) : {};
-    logger.info({
-      operation,
-      duration,
-      ...safeMetadata,
-    }, `${operation} completed in ${duration}ms`);
-  } catch (error) {
-    console.log('[DEBUG] Error in logPerformance:', error);
-    // Fallback logging without metadata
-    logger.info({ operation, duration: Date.now() - startTime }, `${operation} completed`);
-  }
+  const duration = Date.now() - startTime;
+  logger.info(`${operation} completed in ${duration}ms`, {
+    operation,
+    duration,
+    ...metadata,
+  });
 };
 
 // Error logging with stack trace
 export const logError = (
   logger: pino.Logger,
-  error: Error | unknown,
-  context?: Record<string, any>
+  error: unknown,
+  context?: Record<string, unknown>,
 ) => {
-  if (error instanceof Error) {
-    logger.error({
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      },
-      ...context,
-    }, error.message);
-  } else {
-    logger.error({
-      error: String(error),
-      ...context,
-    }, 'Unknown error occurred');
-  }
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorStack = error instanceof Error ? error.stack : undefined;
+
+  logger.error(errorMessage, {
+    errorName: error instanceof Error ? error.name : undefined,
+    errorStack,
+    ...context,
+  });
 };
 
 // Security event logging
 export const logSecurityEvent = (
-  eventType: 'auth_attempt' | 'auth_success' | 'auth_failure' | 'unauthorized_access' | 'suspicious_activity',
-  details: Record<string, any>
+  eventType:
+    | "auth_attempt"
+    | "auth_success"
+    | "auth_failure"
+    | "unauthorized_access"
+    | "suspicious_activity",
+  details: Record<string, unknown>,
 ) => {
-  logger.warn({
-    securityEvent: eventType,
-    timestamp: new Date().toISOString(),
-    ...details,
-  }, `Security event: ${eventType}`);
+  logger.warn(
+    {
+      securityEvent: eventType,
+      timestamp: new Date().toISOString(),
+      ...details,
+    },
+    `Security event: ${eventType}`,
+  );
 };
 
 // Database operation logging
 export const logDatabaseOperation = (
   operation: string,
   table: string,
-  duration?: number,
-  metadata?: Record<string, any>
+  duration: number,
+  metadata?: Record<string, unknown>,
 ) => {
-  try {
-    // Create a safe copy of metadata to avoid circular references
-    const safeMetadata = metadata ? JSON.parse(JSON.stringify(metadata)) : {};
-    dbLogger.info({
-      operation,
-      table,
-      duration,
-      ...safeMetadata,
-    }, `Database ${operation} on ${table}${duration ? ` (${duration}ms)` : ''}`);
-  } catch (error) {
-    console.log('[DEBUG] Error in logDatabaseOperation:', error);
-    // Fallback logging without metadata
-    dbLogger.info({ operation, table, duration }, `Database ${operation} on ${table}`);
-  }
+  apiLogger.debug(`Database ${operation} on ${table} took ${duration}ms`, {
+    operation,
+    table,
+    duration,
+    ...metadata,
+  });
 };
 
 // Business logic logging
 export const logBusinessEvent = (
   event: string,
-  userId?: string,
-  metadata?: Record<string, any>
+  userId: string,
+  metadata?: Record<string, unknown>,
 ) => {
-  logger.info({
+  apiLogger.info(`Business event: ${event}`, {
     businessEvent: event,
     userId,
-    timestamp: new Date().toISOString(),
     ...metadata,
-  }, `Business event: ${event}`);
+  });
 };
 
 export default logger;

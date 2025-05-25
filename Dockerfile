@@ -25,8 +25,8 @@ RUN npm run build
 # Production image
 FROM node:23-slim AS runner
 
-# Install OpenSSL in the production image as well
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+# Install OpenSSL and bash in the production image
+RUN apt-get update -y && apt-get install -y openssl bash && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

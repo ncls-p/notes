@@ -14,8 +14,11 @@ const prisma = new PrismaClient();
 
 // Schema for creating a note
 const createNoteSchema = z.object({
-  title: z.string().min(1, 'Note title is required').max(255, 'Note title too long'),
-  contentMarkdown: z.string().optional().default(''),
+  title: z
+    .string()
+    .min(1, "Note title is required")
+    .max(255, "Note title too long"),
+  contentMarkdown: z.string().optional().default(""),
   folderId: z.string().uuid().optional().nullable(),
 });
 
@@ -28,8 +31,8 @@ const listNotesSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
-  const requestId = request.headers.get('x-request-id') || 'unknown';
-  const userId = request.headers.get('x-user-id');
+  const requestId = request.headers.get("x-request-id") || "unknown";
+  const userId = request.headers.get("x-user-id");
 
   const logger = apiLogger.child({
     requestId,
@@ -37,7 +40,7 @@ export async function POST(request: NextRequest) {
     userId,
   });
 
-  logger.info('Note creation started');
+  logger.info("Note creation started");
 
   try {
     const authResult = await verifyJWT(request);
@@ -48,8 +51,9 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    let validatedData: z.infer<typeof createNoteSchema>;
     try {
-      var validatedData = createNoteSchema.parse(body);
+      validatedData = createNoteSchema.parse(body);
     } catch (validationError) {
       logger.warn(
         {
@@ -62,8 +66,8 @@ export async function POST(request: NextRequest) {
 
       if (validationError instanceof z.ZodError) {
         return NextResponse.json(
-          { error: 'Invalid input', details: validationError.errors },
-          { status: 400 }
+          { error: "Invalid input", details: validationError.errors },
+          { status: 400 },
         );
       }
       throw validationError;
@@ -104,13 +108,20 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ error: 'Folder not found or access denied' }, { status: 404 });
       }
-    }
 
-    // Check for duplicate note titles in the same folder
-    const duplicateCheckStartTime = Date.now();
-    const existingNote = await prisma.note.findFirst({
-      where: {
-        title: validatedData.title,
+      logger.info("Folder found:", folder);
+
+      // Check if a note with the same title already exists in the folder
+      const existingNote = await prisma.note.findFirst({
+        where: {
+          title: validatedData.title,
+          folderId: validatedData.folderId,
+          ownerId: authResult.userId,
+        },
+      });
+      logDatabaseOperation("findFirst", "note", Date.now() - folderStartTime, {
+        operation: "duplicate_check",
+        title: validatedData.title.substring(0, 20) + "...",
         folderId: validatedData.folderId,
         ownerId: authResult.userId,
       },
@@ -131,10 +142,11 @@ export async function POST(request: NextRequest) {
         'Note creation failed: duplicate title in folder'
       );
 
-      return NextResponse.json(
-        { error: 'A note with this title already exists in this location' },
-        { status: 409 }
-      );
+        return NextResponse.json(
+          { error: "A note with this title already exists in this location" },
+          { status: 409 },
+        );
+      }
     }
 
     // Create the note
@@ -155,7 +167,7 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-    logDatabaseOperation('create', 'note', Date.now() - createStartTime, {
+    logDatabaseOperation("create", "note", Date.now() - createStartTime, {
       noteId: note.id,
       title: note.title.substring(0, 20) + '...',
       folderId: note.folderId,
@@ -172,14 +184,14 @@ export async function POST(request: NextRequest) {
       'Note created successfully'
     );
 
-    logBusinessEvent('note_created', authResult.userId, {
+    logBusinessEvent("note_created", authResult.userId, {
       requestId,
       noteId: note.id,
-      title: note.title.substring(0, 50) + '...',
+      title: note.title.substring(0, 50) + "...",
       folderId: note.folderId,
     });
 
-    logPerformance(logger, 'create_note', startTime, {
+    logPerformance(logger, "create_note", startTime, {
       noteId: note.id,
       contentLength: note.contentMarkdown?.length || 0,
     });
@@ -196,7 +208,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logError(logger, error, {
       requestId,
-      operation: 'create_note',
+      operation: "create_note",
       userId: userId,
       duration: Date.now() - startTime,
     });
@@ -207,8 +219,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
-  const requestId = request.headers.get('x-request-id') || 'unknown';
-  const userId = request.headers.get('x-user-id');
+  const requestId = request.headers.get("x-request-id") || "unknown";
+  const userId = request.headers.get("x-user-id");
 
   const logger = apiLogger.child({
     requestId,
@@ -357,7 +369,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     logError(logger, error, {
       requestId,
-      operation: 'list_notes',
+      operation: "list_notes",
       userId: userId,
       duration: Date.now() - startTime,
     });

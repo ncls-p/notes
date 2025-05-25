@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
@@ -89,10 +89,13 @@ export default function Dashboard() {
   // Form states
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [newNoteTitle, setNewNoteTitle] = useState('');
-  const [editingFolder, setEditingFolder] = useState<{ id: string; name: string } | null>(null);
-  const [editFolderName, setEditFolderName] = useState('');
+  const [newFolderName, setNewFolderName] = useState("");
+  const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [editingFolder, setEditingFolder] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [editFolderName, setEditFolderName] = useState("");
 
   // Search functionality
   const performSearch = async (query: string) => {
@@ -159,20 +162,45 @@ export default function Dashboard() {
     }
   }, [user, currentFolderId, sortOption, sortOrder]);
 
-  const loadBreadcrumbPath = async (folderId: string) => {
+      const [foldersResponse, notesResponse] = await Promise.all([
+        apiClient(`/api/folders?parentId=${currentFolderId || "null"}`, {
+          method: "GET",
+        }),
+        apiClient(`/api/notes?folderId=${currentFolderId || "null"}`, {
+          method: "GET",
+        }),
+      ]);
+
+      setFolders(foldersResponse as Folder[]);
+      setNotes(notesResponse as Note[]);
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to load data",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [currentFolderId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const _loadBreadcrumbPath = async (folderId: string) => {
     const path: Folder[] = [];
     let currentId: string | null = folderId;
     try {
       while (currentId) {
         const folderData = (await apiClient(`/api/folders/${currentId}`, {
-          method: 'GET',
+          method: "GET",
         })) as Folder;
         path.unshift(folderData);
         currentId = folderData.parentId;
       }
       setBreadcrumbPath(path);
     } catch (err) {
-      console.error('Failed to load breadcrumb path:', err);
+      console.error("Failed to load breadcrumb path:", err);
       setBreadcrumbPath([]);
     }
   };
@@ -212,19 +240,22 @@ export default function Dashboard() {
     if (!newFolderName.trim()) return;
 
     try {
-      await apiClient('/api/folders', {
-        method: 'POST',
+      await apiClient("/api/folders", {
+        method: "POST",
         body: {
           name: newFolderName,
           parentId: currentFolderId,
         },
       });
 
-      setNewFolderName('');
+      setNewFolderName("");
       setIsCreateFolderOpen(false);
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create folder');
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to create folder",
+      );
     }
   };
 
@@ -232,42 +263,51 @@ export default function Dashboard() {
     if (!newNoteTitle.trim()) return;
 
     try {
-      await apiClient('/api/notes', {
-        method: 'POST',
+      await apiClient("/api/notes", {
+        method: "POST",
         body: {
           title: newNoteTitle,
-          contentMarkdown: '',
+          contentMarkdown: "",
           folderId: currentFolderId,
         },
       });
 
-      setNewNoteTitle('');
+      setNewNoteTitle("");
       setIsCreateNoteOpen(false);
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create note');
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to create note",
+      );
     }
   };
 
   const deleteFolder = async (folderId: string) => {
-    if (!confirm('Are you sure you want to delete this folder?')) return;
+    if (!confirm("Are you sure you want to delete this folder?")) return;
 
     try {
-      await apiClient(`/api/folders/${folderId}`, { method: 'DELETE' });
+      await apiClient(`/api/folders/${folderId}`, { method: "DELETE" });
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to delete folder');
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to delete folder",
+      );
     }
   };
 
   const deleteNote = async (noteId: string) => {
-    if (!confirm('Are you sure you want to delete this note?')) return;
+    if (!confirm("Are you sure you want to delete this note?")) return;
 
     try {
-      await apiClient(`/api/notes/${noteId}`, { method: 'DELETE' });
+      await apiClient(`/api/notes/${noteId}`, { method: "DELETE" });
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to delete note');
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to delete note",
+      );
     }
   };
 
@@ -278,7 +318,7 @@ export default function Dashboard() {
 
   const cancelRenameFolder = () => {
     setEditingFolder(null);
-    setEditFolderName('');
+    setEditFolderName("");
   };
 
   const renameFolder = async () => {
@@ -286,17 +326,20 @@ export default function Dashboard() {
 
     try {
       await apiClient(`/api/folders/${editingFolder.id}`, {
-        method: 'PUT',
+        method: "PUT",
         body: {
           name: editFolderName,
         },
       });
 
       setEditingFolder(null);
-      setEditFolderName('');
+      setEditFolderName("");
       loadData();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to rename folder');
+    } catch (err: unknown) {
+      setError(
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to rename folder",
+      );
     }
   };
 
@@ -312,9 +355,9 @@ export default function Dashboard() {
 
   if (authLoading) {
     return (
-      <div className='min-h-screen bg-background flex items-center justify-center text-foreground'>
-        <div className='flex items-center space-x-2'>
-          <div className='animate-pulse w-4 h-4 bg-primary rounded-full'></div>
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
+        <div className="flex items-center space-x-2">
+          <div className="animate-pulse w-4 h-4 bg-primary rounded-full"></div>
           <div>Checking authentication...</div>
         </div>
       </div>
@@ -323,47 +366,56 @@ export default function Dashboard() {
 
   if (!user) {
     return (
-      <div className='min-h-screen bg-background flex items-center justify-center text-foreground'>
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
         <div>Please log in to access this page.</div>
       </div>
     );
   }
 
   return (
-    <div className='min-h-screen bg-gradient-to-br from-background via-background to-muted/20 text-foreground selection:bg-primary/30 selection:text-primary-foreground'>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 text-foreground selection:bg-primary/30 selection:text-primary-foreground">
       {/* Enhanced Header */}
-      <header className='glass-effect border-b border-border shadow-lg sticky top-0 z-50 animate-slide-in-top'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex justify-between items-center h-20'>
-            <div className='flex items-center animate-slide-in-left'>
+      <header className="glass-effect border-b border-border shadow-lg sticky top-0 z-50 animate-slide-in-top">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center animate-slide-in-left">
               <svg
-                width='32'
-                height='32'
-                viewBox='0 0 24 24'
-                fill='none'
-                xmlns='http://www.w3.org/2000/svg'
-                className='text-primary mr-3 animate-float'
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="text-primary mr-3 animate-float"
               >
                 <path
-                  d='M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z'
-                  fill='currentColor'
+                  d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z"
+                  fill="currentColor"
                 />
-                <path d='M12.5 7H11V13L16.25 16.15L17 14.92L12.5 12.25V7Z' fill='currentColor' />
                 <path
-                  d='M8.5 10.5C8.5 9.67 9.17 9 10 9C10.83 9 11.5 9.67 11.5 10.5C11.5 11.33 10.83 12 10 12C9.17 12 8.5 11.33 8.5 10.5Z'
-                  fill='currentColor'
+                  d="M12.5 7H11V13L16.25 16.15L17 14.92L12.5 12.25V7Z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M8.5 10.5C8.5 9.67 9.17 9 10 9C10.83 9 11.5 9.67 11.5 10.5C11.5 11.33 10.83 12 10 12C9.17 12 8.5 11.33 8.5 10.5Z"
+                  fill="currentColor"
                 />
               </svg>
-              <h1 className='text-3xl font-bold bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 bg-clip-text text-transparent'>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 bg-clip-text text-transparent">
                 Noteworthy
               </h1>
             </div>
-            <div className='flex items-center space-x-4 animate-slide-in-right'>
-              <span className='text-muted-foreground hidden sm:inline'>Welcome, {user.email}</span>
+            <div className="flex items-center space-x-4 animate-slide-in-right">
+              <span className="text-muted-foreground hidden sm:inline">
+                Welcome, {user.email}
+              </span>
               <ThemeToggle />
-              <Button variant='outline' onClick={logout} className='smooth-hover'>
-                <LogOut className='w-4 h-4 mr-2 sm:mr-0 md:mr-2' />
-                <span className='hidden md:inline'>Logout</span>
+              <Button
+                variant="outline"
+                onClick={logout}
+                className="smooth-hover"
+              >
+                <LogOut className="w-4 h-4 mr-2 sm:mr-0 md:mr-2" />
+                <span className="hidden md:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -526,46 +578,46 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <main className='max-w-7xl mx-auto py-8 sm:px-6 lg:px-8'>
-        <div className='px-4 py-6 sm:px-0 space-y-8'>
+      <main className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
+        <div className="px-4 py-6 sm:px-0 space-y-8">
           {/* Breadcrumb */}
-          <div className='animate-slide-in-left'>
-            <nav className='flex' aria-label='Breadcrumb'>
-              <ol className='inline-flex items-center space-x-1 md:space-x-2'>
-                <li className='inline-flex items-center'>
+          <div className="animate-slide-in-left">
+            <nav className="flex" aria-label="Breadcrumb">
+              <ol className="inline-flex items-center space-x-1 md:space-x-2">
+                <li className="inline-flex items-center">
                   <button
                     onClick={() => setCurrentFolderId(null)}
-                    className='inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors smooth-hover'
+                    className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors smooth-hover"
                   >
-                    <Folder className='w-4 h-4 mr-1.5' />
+                    <Folder className="w-4 h-4 mr-1.5" />
                     Root
                   </button>
                 </li>
                 {breadcrumbPath.map((folder, index) => (
-                  <li key={folder.id} className='inline-flex items-center'>
+                  <li key={folder.id} className="inline-flex items-center">
                     <svg
-                      className='w-3 h-3 text-muted-foreground mx-1'
-                      aria-hidden='true'
-                      xmlns='http://www.w3.org/2000/svg'
-                      fill='none'
-                      viewBox='0 0 6 10'
+                      className="w-3 h-3 text-muted-foreground mx-1"
+                      aria-hidden="true"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 6 10"
                     >
                       <path
-                        stroke='currentColor'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                        strokeWidth='2'
-                        d='m1 9 4-4-4-4'
+                        stroke="currentColor"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="m1 9 4-4-4-4"
                       />
                     </svg>
                     {index === breadcrumbPath.length - 1 ? (
-                      <span className='text-sm font-medium text-muted-foreground ms-1 md:ms-2'>
+                      <span className="text-sm font-medium text-muted-foreground ms-1 md:ms-2">
                         {folder.name}
                       </span>
                     ) : (
                       <button
                         onClick={() => setCurrentFolderId(folder.id)}
-                        className='inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors smooth-hover ms-1 md:ms-2'
+                        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors smooth-hover ms-1 md:ms-2"
                       >
                         {folder.name}
                       </button>
@@ -586,8 +638,8 @@ export default function Dashboard() {
 
           {/* Error Display */}
           {error && (
-            <div className='p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg shadow-md animate-slide-in-bottom'>
-              <span className='font-semibold'>Error:</span> {error}
+            <div className="p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg shadow-md animate-slide-in-bottom">
+              <span className="font-semibold">Error:</span> {error}
             </div>
           )}
 
@@ -606,9 +658,9 @@ export default function Dashboard() {
           ) : (
             <div
               className={`${
-                viewMode === 'grid'
-                  ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-                  : 'space-y-3'
+                viewMode === "grid"
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  : "space-y-3"
               } animate-slide-in-bottom`}
             >
               {/* Folders */}
@@ -617,22 +669,22 @@ export default function Dashboard() {
                   <ContextMenuTrigger>
                     <Card
                       className={`card-hover glass-effect group cursor-pointer animate-slide-in-bottom ${
-                        viewMode === 'list' ? 'flex items-center p-4' : ''
+                        viewMode === "list" ? "flex items-center p-4" : ""
                       }`}
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      {viewMode === 'grid' ? (
+                      {viewMode === "grid" ? (
                         <>
                           <CardHeader
-                            className='pb-3 flex flex-row items-center justify-between space-y-0'
+                            className="pb-3 flex flex-row items-center justify-between space-y-0"
                             onClick={() => setCurrentFolderId(folder.id)}
                           >
-                            <div className='flex items-center space-x-3 flex-grow min-w-0'>
-                              <div className='p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 shadow-lg group-hover:scale-110 transition-transform duration-300'>
-                                <Folder className='w-5 h-5 text-white' />
+                            <div className="flex items-center space-x-3 flex-grow min-w-0">
+                              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                <Folder className="w-5 h-5 text-white" />
                               </div>
                               <CardTitle
-                                className='text-lg font-semibold truncate group-hover:text-primary transition-colors'
+                                className="text-lg font-semibold truncate group-hover:text-primary transition-colors"
                                 title={folder.name}
                               >
                                 {folder.name}
@@ -654,14 +706,14 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <div
-                          className='flex items-center space-x-4 flex-grow'
+                          className="flex items-center space-x-4 flex-grow"
                           onClick={() => setCurrentFolderId(folder.id)}
                         >
-                          <div className='p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 shadow-lg group-hover:scale-110 transition-transform duration-300'>
-                            <Folder className='w-5 h-5 text-white' />
+                          <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                            <Folder className="w-5 h-5 text-white" />
                           </div>
-                          <div className='flex-grow'>
-                            <h3 className='font-semibold group-hover:text-primary transition-colors'>
+                          <div className="flex-grow">
+                            <h3 className="font-semibold group-hover:text-primary transition-colors">
                               {folder.name}
                             </h3>
                             <p className='text-sm text-muted-foreground'>
@@ -679,12 +731,12 @@ export default function Dashboard() {
                       )}
                     </Card>
                   </ContextMenuTrigger>
-                  <ContextMenuContent className='glass-effect'>
+                  <ContextMenuContent className="glass-effect">
                     <ContextMenuItem
                       onClick={() => setCurrentFolderId(folder.id)}
-                      className='smooth-hover'
+                      className="smooth-hover"
                     >
-                      <FolderOpen className='mr-2 h-4 w-4' />
+                      <FolderOpen className="mr-2 h-4 w-4" />
                       Open
                     </ContextMenuItem>
                     {!isSearchMode && (
@@ -699,9 +751,9 @@ export default function Dashboard() {
                     <ContextMenuSeparator />
                     <ContextMenuItem
                       onClick={() => deleteFolder(folder.id)}
-                      className='text-destructive hover:bg-destructive/10 smooth-hover'
+                      className="text-destructive hover:bg-destructive/10 smooth-hover"
                     >
-                      <Trash2 className='mr-2 h-4 w-4' />
+                      <Trash2 className="mr-2 h-4 w-4" />
                       Delete
                     </ContextMenuItem>
                   </ContextMenuContent>
@@ -714,31 +766,43 @@ export default function Dashboard() {
                   <ContextMenuTrigger>
                     <Card
                       className={`card-hover glass-effect group cursor-pointer animate-slide-in-bottom ${
-                        viewMode === 'list' ? 'flex items-center p-4' : ''
+                        viewMode === "list" ? "flex items-center p-4" : ""
                       }`}
-                      style={{ animationDelay: `${(filteredFolders.length + index) * 50}ms` }}
+                      style={{
+                        animationDelay: `${
+                          (filteredFolders.length + index) * 50
+                        }ms`,
+                      }}
                     >
-                      {viewMode === 'grid' ? (
+                      {viewMode === "grid" ? (
                         <>
                           <CardHeader
-                            className='pb-3 flex flex-row items-center justify-between space-y-0'
-                            onClick={() => (window.location.href = `/notes/${note.id}`)}
+                            className="pb-3 flex flex-row items-center justify-between space-y-0"
+                            onClick={() =>
+                              (window.location.href = `/notes/${note.id}`)
+                            }
                           >
-                            <div className='flex items-center space-x-3 flex-grow min-w-0'>
-                              <div className='p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg group-hover:scale-110 transition-transform duration-300'>
-                                <FileText className='w-5 h-5 text-white' />
+                            <div className="flex items-center space-x-3 flex-grow min-w-0">
+                              <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                <FileText className="w-5 h-5 text-white" />
                               </div>
                               <CardTitle
-                                className='text-lg font-semibold truncate group-hover:text-primary transition-colors'
+                                className="text-lg font-semibold truncate group-hover:text-primary transition-colors"
                                 title={note.title}
                               >
                                 {note.title}
                               </CardTitle>
                             </div>
                           </CardHeader>
-                          <CardContent onClick={() => (window.location.href = `/notes/${note.id}`)}>
-                            <p className='text-sm text-muted-foreground truncate h-10 leading-5 mb-2'>
-                              {note.contentMarkdown || <span className='italic'>No content</span>}
+                          <CardContent
+                            onClick={() =>
+                              (window.location.href = `/notes/${note.id}`)
+                            }
+                          >
+                            <p className="text-sm text-muted-foreground truncate h-10 leading-5 mb-2">
+                              {note.contentMarkdown || (
+                                <span className="italic">No content</span>
+                              )}
                             </p>
                             {isSearchMode && 'path' in note && (
                               <p className='text-xs text-muted-foreground mb-1'>📁 {note.path}</p>
@@ -751,14 +815,16 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <div
-                          className='flex items-center space-x-4 flex-grow'
-                          onClick={() => (window.location.href = `/notes/${note.id}`)}
+                          className="flex items-center space-x-4 flex-grow"
+                          onClick={() =>
+                            (window.location.href = `/notes/${note.id}`)
+                          }
                         >
-                          <div className='p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg group-hover:scale-110 transition-transform duration-300'>
-                            <FileText className='w-5 h-5 text-white' />
+                          <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                            <FileText className="w-5 h-5 text-white" />
                           </div>
-                          <div className='flex-grow'>
-                            <h3 className='font-semibold group-hover:text-primary transition-colors'>
+                          <div className="flex-grow">
+                            <h3 className="font-semibold group-hover:text-primary transition-colors">
                               {note.title}
                             </h3>
                             <p className='text-sm text-muted-foreground truncate'>
@@ -778,20 +844,22 @@ export default function Dashboard() {
                       )}
                     </Card>
                   </ContextMenuTrigger>
-                  <ContextMenuContent className='glass-effect'>
+                  <ContextMenuContent className="glass-effect">
                     <ContextMenuItem
-                      onClick={() => (window.location.href = `/notes/${note.id}`)}
-                      className='smooth-hover'
+                      onClick={() =>
+                        (window.location.href = `/notes/${note.id}`)
+                      }
+                      className="smooth-hover"
                     >
-                      <ExternalLink className='mr-2 h-4 w-4' />
+                      <ExternalLink className="mr-2 h-4 w-4" />
                       Edit / View
                     </ContextMenuItem>
                     <ContextMenuSeparator />
                     <ContextMenuItem
                       onClick={() => deleteNote(note.id)}
-                      className='text-destructive hover:bg-destructive/10 smooth-hover'
+                      className="text-destructive hover:bg-destructive/10 smooth-hover"
                     >
-                      <Trash2 className='mr-2 h-4 w-4' />
+                      <Trash2 className="mr-2 h-4 w-4" />
                       Delete
                     </ContextMenuItem>
                   </ContextMenuContent>

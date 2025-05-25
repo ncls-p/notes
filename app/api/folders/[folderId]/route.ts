@@ -1,27 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import { verifyJWT } from '@/lib/auth/serverAuth';
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import { verifyJWT } from "@/lib/auth/serverAuth";
 
 const prisma = new PrismaClient();
 
 // Schema for updating a folder
 const updateFolderSchema = z.object({
-  name: z.string().min(1, 'Folder name is required').max(255, 'Folder name too long').optional(),
+  name: z
+    .string()
+    .min(1, "Folder name is required")
+    .max(255, "Folder name too long")
+    .optional(),
   parentId: z.string().uuid().optional().nullable(),
 });
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ folderId: string }> }
+  { params }: { params: Promise<{ folderId: string }> },
 ) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { folderId } = await params;
@@ -49,8 +50,8 @@ export async function GET(
 
     if (!folder) {
       return NextResponse.json(
-        { error: 'Folder not found or access denied' },
-        { status: 404 }
+        { error: "Folder not found or access denied" },
+        { status: 404 },
       );
     }
 
@@ -65,25 +66,22 @@ export async function GET(
       updatedAt: folder.updatedAt,
     });
   } catch (error) {
-    console.error('Error fetching folder:', error);
+    console.error("Error fetching folder:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ folderId: string }> }
+  { params }: { params: Promise<{ folderId: string }> },
 ) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { folderId } = await params;
@@ -98,8 +96,8 @@ export async function PUT(
 
     if (!existingFolder) {
       return NextResponse.json(
-        { error: 'Folder not found or access denied' },
-        { status: 404 }
+        { error: "Folder not found or access denied" },
+        { status: 404 },
       );
     }
 
@@ -107,7 +105,10 @@ export async function PUT(
     const validatedData = updateFolderSchema.parse(body);
 
     // If parentId is being changed, verify the new parent exists and belongs to the user
-    if (validatedData.parentId !== undefined && validatedData.parentId !== null) {
+    if (
+      validatedData.parentId !== undefined &&
+      validatedData.parentId !== null
+    ) {
       const parentFolder = await prisma.folder.findFirst({
         where: {
           id: validatedData.parentId,
@@ -117,24 +118,30 @@ export async function PUT(
 
       if (!parentFolder) {
         return NextResponse.json(
-          { error: 'Parent folder not found or access denied' },
-          { status: 404 }
+          { error: "Parent folder not found or access denied" },
+          { status: 404 },
         );
       }
 
       // Check for cyclical structure - ensure the folder is not being moved into its own child
-      const isDescendant = await checkIfDescendant(folderId, validatedData.parentId);
+      const isDescendant = await checkIfDescendant(
+        folderId,
+        validatedData.parentId,
+      );
       if (isDescendant) {
         return NextResponse.json(
-          { error: 'Cannot move folder into its own descendant' },
-          { status: 400 }
+          { error: "Cannot move folder into its own descendant" },
+          { status: 400 },
         );
       }
     }
 
     // If name is being changed, check for duplicates in the target parent
     if (validatedData.name) {
-      const targetParentId = validatedData.parentId !== undefined ? validatedData.parentId : existingFolder.parentId;
+      const targetParentId =
+        validatedData.parentId !== undefined
+          ? validatedData.parentId
+          : existingFolder.parentId;
 
       const duplicateFolder = await prisma.folder.findFirst({
         where: {
@@ -147,8 +154,8 @@ export async function PUT(
 
       if (duplicateFolder) {
         return NextResponse.json(
-          { error: 'A folder with this name already exists in this location' },
-          { status: 409 }
+          { error: "A folder with this name already exists in this location" },
+          { status: 409 },
         );
       }
     }
@@ -185,30 +192,27 @@ export async function PUT(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid input', details: error.errors },
-        { status: 400 }
+        { error: "Invalid input", details: error.errors },
+        { status: 400 },
       );
     }
 
-    console.error('Error updating folder:', error);
+    console.error("Error updating folder:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ folderId: string }> }
+  { params }: { params: Promise<{ folderId: string }> },
 ) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { folderId } = await params;
@@ -231,16 +235,16 @@ export async function DELETE(
 
     if (!existingFolder) {
       return NextResponse.json(
-        { error: 'Folder not found or access denied' },
-        { status: 404 }
+        { error: "Folder not found or access denied" },
+        { status: 404 },
       );
     }
 
     // For MVP: disallow deleting non-empty folders
     if (existingFolder._count.children > 0 || existingFolder._count.notes > 0) {
       return NextResponse.json(
-        { error: 'Cannot delete folder that contains subfolders or notes' },
-        { status: 400 }
+        { error: "Cannot delete folder that contains subfolders or notes" },
+        { status: 400 },
       );
     }
 
@@ -248,18 +252,21 @@ export async function DELETE(
       where: { id: folderId },
     });
 
-    return NextResponse.json({ message: 'Folder deleted successfully' });
+    return NextResponse.json({ message: "Folder deleted successfully" });
   } catch (error) {
-    console.error('Error deleting folder:', error);
+    console.error("Error deleting folder:", error);
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
 
 // Helper function to check if a folder would become a descendant of itself
-async function checkIfDescendant(folderId: string, potentialParentId: string): Promise<boolean> {
+async function checkIfDescendant(
+  folderId: string,
+  potentialParentId: string,
+): Promise<boolean> {
   if (folderId === potentialParentId) {
     return true;
   }
