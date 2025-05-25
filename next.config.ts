@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Server external packages configuration
+  serverExternalPackages: [],
+  // Disable trailing slash
+  trailingSlash: false,
 };
 
 export default nextConfig;
