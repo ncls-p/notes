@@ -56,6 +56,21 @@ interface Note {
   updatedAt: string;
 }
 
+interface SearchResult {
+  id: string;
+  type: 'folder' | 'note';
+  name: string;
+  title?: string;
+  contentMarkdown?: string | null;
+  path: string;
+  folderId: string | null;
+  folder?: { id: string; name: string } | null;
+  childrenCount?: number;
+  notesCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function Dashboard() {
   const { user, logout, isLoading: authLoading } = useAuth();
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -65,6 +80,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortOption, setSortOption] = useState<'name' | 'createdAt' | 'updatedAt'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -77,15 +94,59 @@ export default function Dashboard() {
   const [editingFolder, setEditingFolder] = useState<{ id: string; name: string } | null>(null);
   const [editFolderName, setEditFolderName] = useState('');
 
-  // Filtered content based on search
-  const filteredFolders = folders.filter((folder) =>
-    folder.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const filteredNotes = notes.filter(
-    (note) =>
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (note.contentMarkdown?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
-  );
+  // Search functionality
+  const performSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      setError(null);
+
+      const searchApiUrl = `/api/search?query=${encodeURIComponent(query)}&sortBy=${
+        sortOption === 'name' ? 'name' : sortOption
+      }&sortOrder=${sortOrder}&limit=50`;
+
+      console.log('Dashboard: Performing search with URL:', searchApiUrl);
+
+      const response = (await apiClient(searchApiUrl, { method: 'GET' })) as {
+        results: SearchResult[];
+      };
+      setSearchResults(response.results || []);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to search');
+      console.error('Dashboard: Failed to search:', err);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        performSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, sortOption, sortOrder]);
+
+  // Determine what content to display
+  const isSearchMode = searchQuery.trim().length > 0;
+  const filteredFolders = isSearchMode
+    ? searchResults.filter((result) => result.type === 'folder')
+    : folders;
+  const filteredNotes = isSearchMode
+    ? searchResults.filter((result) => result.type === 'note')
+    : notes;
 
   useEffect(() => {
     if (user) {
@@ -311,7 +372,7 @@ export default function Dashboard() {
             <div className='relative w-full max-w-xl'>
               <Input
                 type='search'
-                placeholder='Search notes and folders...'
+                placeholder='Search across all notes and folders...'
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className='pl-10 pr-4 py-3 w-full rounded-lg bg-background/50 backdrop-blur-sm border-border focus:border-primary smooth-hover text-lg'
@@ -515,6 +576,14 @@ export default function Dashboard() {
             </nav>
           </div>
 
+          {/* Search Results Header */}
+          {isSearchMode && !isSearching && (
+            <div className='p-4 bg-primary/10 border border-primary/30 text-primary rounded-lg shadow-md animate-slide-in-bottom'>
+              <span className='font-semibold'>Search Results:</span> Found{' '}
+              {filteredFolders.length + filteredNotes.length} items matching "{searchQuery}"
+            </div>
+          )}
+
           {/* Error Display */}
           {error && (
             <div className='p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg shadow-md animate-slide-in-bottom'>
@@ -523,13 +592,15 @@ export default function Dashboard() {
           )}
 
           {/* Loading State */}
-          {loading ? (
+          {loading || isSearching ? (
             <div className='text-center py-12'>
               <div className='space-y-4'>
                 <div className='flex justify-center'>
                   <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
                 </div>
-                <div className='text-muted-foreground'>Loading content...</div>
+                <div className='text-muted-foreground'>
+                  {isSearching ? 'Searching...' : 'Loading content...'}
+                </div>
               </div>
             </div>
           ) : (
@@ -570,8 +641,11 @@ export default function Dashboard() {
                           </CardHeader>
                           <CardContent onClick={() => setCurrentFolderId(folder.id)}>
                             <p className='text-sm text-muted-foreground mb-2'>
-                              {folder.childrenCount} folders, {folder.notesCount} notes
+                              {folder.childrenCount || 0} folders, {folder.notesCount || 0} notes
                             </p>
+                            {isSearchMode && 'path' in folder && (
+                              <p className='text-xs text-muted-foreground mb-1'>📁 {folder.path}</p>
+                            )}
                             <p className='text-xs text-muted-foreground'>
                               Updated: {new Date(folder.updatedAt).toLocaleDateString()}{' '}
                               {new Date(folder.updatedAt).toLocaleTimeString()}
@@ -591,8 +665,11 @@ export default function Dashboard() {
                               {folder.name}
                             </h3>
                             <p className='text-sm text-muted-foreground'>
-                              {folder.childrenCount} folders, {folder.notesCount} notes
+                              {folder.childrenCount || 0} folders, {folder.notesCount || 0} notes
                             </p>
+                            {isSearchMode && 'path' in folder && (
+                              <p className='text-xs text-muted-foreground'>📁 {folder.path}</p>
+                            )}
                           </div>
                           <div className='text-xs text-muted-foreground'>
                             Updated: {new Date(folder.updatedAt).toLocaleDateString()}{' '}
@@ -610,13 +687,15 @@ export default function Dashboard() {
                       <FolderOpen className='mr-2 h-4 w-4' />
                       Open
                     </ContextMenuItem>
-                    <ContextMenuItem
-                      onClick={() => startRenameFolder(folder)}
-                      className='smooth-hover'
-                    >
-                      <Pencil className='mr-2 h-4 w-4' />
-                      Rename
-                    </ContextMenuItem>
+                    {!isSearchMode && (
+                      <ContextMenuItem
+                        onClick={() => startRenameFolder(folder as Folder)}
+                        className='smooth-hover'
+                      >
+                        <Pencil className='mr-2 h-4 w-4' />
+                        Rename
+                      </ContextMenuItem>
+                    )}
                     <ContextMenuSeparator />
                     <ContextMenuItem
                       onClick={() => deleteFolder(folder.id)}
@@ -661,6 +740,9 @@ export default function Dashboard() {
                             <p className='text-sm text-muted-foreground truncate h-10 leading-5 mb-2'>
                               {note.contentMarkdown || <span className='italic'>No content</span>}
                             </p>
+                            {isSearchMode && 'path' in note && (
+                              <p className='text-xs text-muted-foreground mb-1'>📁 {note.path}</p>
+                            )}
                             <p className='text-xs text-muted-foreground'>
                               Updated: {new Date(note.updatedAt).toLocaleDateString()}{' '}
                               {new Date(note.updatedAt).toLocaleTimeString()}
@@ -684,6 +766,9 @@ export default function Dashboard() {
                                 ? `${note.contentMarkdown.substring(0, 100)}...`
                                 : note.contentMarkdown || 'No content'}
                             </p>
+                            {isSearchMode && 'path' in note && (
+                              <p className='text-xs text-muted-foreground'>📁 {note.path}</p>
+                            )}
                           </div>
                           <div className='text-xs text-muted-foreground'>
                             Updated: {new Date(note.updatedAt).toLocaleDateString()}{' '}
@@ -714,40 +799,43 @@ export default function Dashboard() {
               ))}
 
               {/* Empty State */}
-              {filteredFolders.length === 0 && filteredNotes.length === 0 && !loading && (
-                <div className='col-span-full text-center py-16 animate-fade-in-scale'>
-                  <div className='space-y-6'>
-                    <div className='relative'>
-                      <Folder className='w-20 h-20 mx-auto text-muted-foreground/50 animate-float' />
-                      <div className='absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center'>
-                        <Plus className='w-4 h-4 text-white' />
+              {filteredFolders.length === 0 &&
+                filteredNotes.length === 0 &&
+                !loading &&
+                !isSearching && (
+                  <div className='col-span-full text-center py-16 animate-fade-in-scale'>
+                    <div className='space-y-6'>
+                      <div className='relative'>
+                        <Folder className='w-20 h-20 mx-auto text-muted-foreground/50 animate-float' />
+                        <div className='absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center'>
+                          <Plus className='w-4 h-4 text-white' />
+                        </div>
                       </div>
-                    </div>
-                    <div className='space-y-3'>
-                      <h3 className='text-2xl font-semibold'>
-                        {searchQuery ? 'No results found' : 'This folder is empty'}
-                      </h3>
-                      <p className='text-muted-foreground max-w-md mx-auto'>
-                        {searchQuery
-                          ? `No folders or notes match "${searchQuery}". Try a different search term.`
-                          : 'Create your first folder or note to get started on your knowledge journey.'}
-                      </p>
-                    </div>
-                    {!searchQuery && (
-                      <div className='flex justify-center space-x-4 pt-4'>
-                        <Button onClick={() => setIsCreateFolderOpen(true)} variant='primary'>
-                          <Plus className='w-4 h-4 mr-2' />
-                          Create Folder
-                        </Button>
-                        <Button onClick={() => setIsCreateNoteOpen(true)} variant='outline'>
-                          <Plus className='w-4 h-4 mr-2' />
-                          Create Note
-                        </Button>
+                      <div className='space-y-3'>
+                        <h3 className='text-2xl font-semibold'>
+                          {searchQuery ? 'No results found' : 'This folder is empty'}
+                        </h3>
+                        <p className='text-muted-foreground max-w-md mx-auto'>
+                          {searchQuery
+                            ? `No folders or notes match "${searchQuery}". Try a different search term.`
+                            : 'Create your first folder or note to get started on your knowledge journey.'}
+                        </p>
                       </div>
-                    )}
+                      {!searchQuery && (
+                        <div className='flex justify-center space-x-4 pt-4'>
+                          <Button onClick={() => setIsCreateFolderOpen(true)} variant='primary'>
+                            <Plus className='w-4 h-4 mr-2' />
+                            Create Folder
+                          </Button>
+                          <Button onClick={() => setIsCreateNoteOpen(true)} variant='outline'>
+                            <Plus className='w-4 h-4 mr-2' />
+                            Create Note
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           )}
         </div>
