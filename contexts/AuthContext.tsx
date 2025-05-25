@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAccessToken, setAccessToken, clearAuthTokens } from '@/lib/apiClient'; // Assuming apiClient handles token storage
+import { clientLogger } from '@/lib/clientLogger';
 
 // Define User type
 interface User {
@@ -31,9 +32,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let isMounted = true;
     const initializeAuth = async () => {
+      clientLogger.time('auth_initialization');
+      clientLogger.debug('Starting authentication initialization');
+
       try {
         const token = getAccessToken(); // Synchronous in current mock, could be async
         if (token) {
+          clientLogger.debug('Found existing access token');
           // Decode the JWT token to extract user data
           try {
             const base64Url = token.split('.')[1];
@@ -45,28 +50,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const decoded = JSON.parse(jsonPayload);
 
             if (decoded.userId && decoded.email && isMounted) {
-              setUser({
+              const userData = {
                 id: decoded.userId,
                 email: decoded.email
-              });
+              };
+
+              setUser(userData);
               setIsAuthenticated(true);
+              clientLogger.setUserId(decoded.userId);
+
+              clientLogger.logAuthEvent('login_success', {
+                method: 'existing_token',
+                userId: decoded.userId,
+                email: decoded.email.substring(0, 3) + '***@' + decoded.email.split('@')[1]
+              });
             }
           } catch (decodeError) {
-            console.error('Failed to decode token:', decodeError);
+            clientLogger.logError(decodeError, {
+              context: 'token_decode',
+              operation: 'auth_initialization'
+            });
             // If token is invalid, clear it
             clearAuthTokens();
+            clientLogger.logAuthEvent('login_failure', {
+              method: 'existing_token',
+              reason: 'invalid_token'
+            });
           }
         } else {
+          clientLogger.debug('No access token found, attempting refresh');
           // Try to refresh the token using the refresh token cookie
           try {
+            clientLogger.logRequest('POST', '/api/auth/refresh-token');
+            const refreshStartTime = Date.now();
+
             const response = await fetch('/api/auth/refresh-token', {
               method: 'POST',
               credentials: 'include', // Include cookies for refresh token
             });
 
+            const refreshDuration = Date.now() - refreshStartTime;
+            clientLogger.logResponse('POST', '/api/auth/refresh-token', response.status, refreshDuration);
+
             if (response.ok) {
               const data = await response.json();
               if (data.accessToken) {
+                clientLogger.debug('Token refresh successful');
                 // Decode the new token and set user
                 try {
                   const base64Url = data.accessToken.split('.')[1];
@@ -79,28 +108,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
                   if (decoded.userId && decoded.email && isMounted) {
                     setAccessToken(data.accessToken); // Store the new token
-                    setUser({
+                    const userData = {
                       id: decoded.userId,
                       email: decoded.email
-                    });
+                    };
+
+                    setUser(userData);
                     setIsAuthenticated(true);
+                    clientLogger.setUserId(decoded.userId);
+
+                    clientLogger.logAuthEvent('token_refresh', {
+                      userId: decoded.userId,
+                      email: decoded.email.substring(0, 3) + '***@' + decoded.email.split('@')[1],
+                      duration: refreshDuration
+                    });
                   }
                 } catch (decodeError) {
-                  console.error('Failed to decode refreshed token:', decodeError);
+                  clientLogger.logError(decodeError, {
+                    context: 'refreshed_token_decode',
+                    operation: 'auth_initialization'
+                  });
                 }
               }
+            } else {
+              clientLogger.logAuthEvent('login_failure', {
+                method: 'token_refresh',
+                reason: 'refresh_failed',
+                status: response.status
+              });
             }
           } catch (refreshError) {
-            // Refresh failed, user will remain unauthenticated
-            console.warn('Token refresh failed:', refreshError);
+            clientLogger.logError(refreshError, {
+              context: 'token_refresh',
+              operation: 'auth_initialization'
+            });
+            clientLogger.logAuthEvent('login_failure', {
+              method: 'token_refresh',
+              reason: 'network_error'
+            });
           }
         }
       } catch (error) {
-        console.error('Failed to initialize auth:', error);
+        clientLogger.logError(error, {
+          context: 'auth_initialization',
+          operation: 'auth_initialization'
+        });
         // Remain unauthenticated if token check fails
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          clientLogger.timeEnd('auth_initialization');
+          clientLogger.debug('Authentication initialization completed');
         }
       }
     };
@@ -112,31 +170,69 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = (newAccessToken: string, userData: User) => {
+    clientLogger.debug('Manual login called', {
+      userId: userData.id,
+      email: userData.email.substring(0, 3) + '***@' + userData.email.split('@')[1]
+    });
+
     setAccessToken(newAccessToken);
     setUser(userData);
     setIsAuthenticated(true);
+    clientLogger.setUserId(userData.id);
+
+    clientLogger.logAuthEvent('login_success', {
+      method: 'manual_login',
+      userId: userData.id,
+      email: userData.email.substring(0, 3) + '***@' + userData.email.split('@')[1]
+    });
   };
 
   const logout = async () => {
+    const logoutStartTime = Date.now();
+    const currentUserId = user?.id;
+
+    clientLogger.debug('Logout initiated', {
+      userId: currentUserId
+    });
+
     try {
       // Call the logout API to clear server-side refresh token
-      await fetch('/api/auth/logout', {
+      clientLogger.logRequest('POST', '/api/auth/logout');
+      const response = await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include', // Include cookies
       });
+
+      const logoutDuration = Date.now() - logoutStartTime;
+      clientLogger.logResponse('POST', '/api/auth/logout', response.status, logoutDuration);
     } catch (error) {
-      console.error('Failed to call logout API:', error);
+      clientLogger.logError(error, {
+        context: 'logout_api_call',
+        operation: 'logout'
+      });
       // Continue with client-side logout even if server call fails
     }
 
     try {
       clearAuthTokens();
+      clientLogger.debug('Auth tokens cleared successfully');
     } catch (error) {
-      console.error('Failed to clear tokens during logout:', error);
+      clientLogger.logError(error, {
+        context: 'clear_tokens',
+        operation: 'logout'
+      });
       // Proceed with logout on client-side even if token clearing fails
     }
+
     setUser(null);
     setIsAuthenticated(false);
+    clientLogger.clearUserId();
+
+    clientLogger.logAuthEvent('logout', {
+      userId: currentUserId,
+      duration: Date.now() - logoutStartTime
+    });
+
     router.push('/login');
   };
 
@@ -144,8 +240,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // that a token refresh has definitively failed.
   useEffect(() => {
     const handleAuthFailure = () => {
-      // This function would be called if apiClient signals an unrecoverable auth error
-      console.log('AuthContext: Unrecoverable authentication failure detected. Logging out.');
+      clientLogger.warn('Unrecoverable authentication failure detected', {
+        context: 'auth_failure_handler'
+      });
       logout();
     };
 

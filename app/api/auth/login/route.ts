@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { verify } from 'argon2';
 import jwt from 'jsonwebtoken';
+import { authLogger, logError, logSecurityEvent, logDatabaseOperation, logPerformance } from '@/lib/logger';
 
 const prisma = new PrismaClient();
 
@@ -13,30 +14,106 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const startTime = Date.now();
+  const requestId = request.headers.get('x-request-id') || 'unknown';
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+  const clientIP = request.headers.get('x-forwarded-for') ||
+                   request.headers.get('x-real-ip') ||
+                   'unknown';
+
+  const logger = authLogger.child({
+    requestId,
+    operation: 'login',
+    userAgent,
+    clientIP
+  });
+
+  logger.info('Login attempt started');
+
   try {
     const body = await request.json();
 
+    // Validate input
     const validation = loginSchema.safeParse(body);
     if (!validation.success) {
-      return NextResponse.json({ error: 'Invalid input', details: validation.error.flatten().fieldErrors }, { status: 400 });
+      logger.warn({
+        validationErrors: validation.error.flatten().fieldErrors,
+        email: body.email ? body.email.substring(0, 3) + '***' : 'missing', // Partial email for debugging
+      }, 'Login validation failed');
+
+      logSecurityEvent('auth_attempt', {
+        requestId,
+        email: body.email ? body.email.substring(0, 3) + '***' : 'missing',
+        result: 'validation_failed',
+        userAgent,
+        clientIP,
+      });
+
+      return NextResponse.json({
+        error: 'Invalid input',
+        details: validation.error.flatten().fieldErrors
+      }, { status: 400 });
     }
+
     const { email, password } = validation.data;
+    const maskedEmail = email.substring(0, 3) + '***@' + email.split('@')[1];
 
+    logger.info({ email: maskedEmail }, 'Attempting to find user');
+
+    // Database lookup with timing
+    const dbStartTime = Date.now();
     const user = await prisma.user.findUnique({ where: { email } });
+    logDatabaseOperation('findUnique', 'user', Date.now() - dbStartTime, { email: maskedEmail });
 
-    if (!user || !user.password_hash) { // Also check if password_hash exists
+    if (!user || !user.password_hash) {
+      logger.warn({ email: maskedEmail }, 'Login failed: user not found or no password hash');
+
+      logSecurityEvent('auth_failure', {
+        requestId,
+        email: maskedEmail,
+        reason: 'user_not_found',
+        userAgent,
+        clientIP,
+      });
+
+      // Add a small delay to prevent timing attacks
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    // Password verification with timing
+    const passwordStartTime = Date.now();
     const isValidPassword = await verify(user.password_hash, password);
+    const passwordVerificationTime = Date.now() - passwordStartTime;
+
     if (!isValidPassword) {
+      logger.warn({
+        email: maskedEmail,
+        userId: user.id,
+        passwordVerificationTime,
+      }, 'Login failed: invalid password');
+
+      logSecurityEvent('auth_failure', {
+        requestId,
+        userId: user.id,
+        email: maskedEmail,
+        reason: 'invalid_password',
+        userAgent,
+        clientIP,
+      });
+
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
+    // Check environment configuration
     if (!process.env.JWT_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
-      console.error('JWT_SECRET or REFRESH_TOKEN_SECRET not defined');
+      logger.error('JWT secrets not configured');
       return NextResponse.json({ error: 'Internal server configuration error' }, { status: 500 });
     }
+
+    // Generate tokens
+    logger.debug({ userId: user.id }, 'Generating JWT tokens');
 
     const accessToken = jwt.sign(
       { userId: user.id, email: user.email },
@@ -73,10 +150,38 @@ export async function POST(request: Request) {
       maxAge: 15 * 60, // 15 minutes (same as access token expiry)
     });
 
+    // Log successful login
+    logger.info({
+      userId: user.id,
+      email: maskedEmail,
+      passwordVerificationTime,
+      totalDuration: Date.now() - startTime,
+    }, 'Login successful');
+
+    logSecurityEvent('auth_success', {
+      requestId,
+      userId: user.id,
+      email: maskedEmail,
+      userAgent,
+      clientIP,
+    });
+
+    logPerformance(logger, 'login', startTime, {
+      userId: user.id,
+      passwordVerificationTime,
+    });
+
     return response;
 
   } catch (error) {
-    console.error('Login error:', error);
+    logError(logger, error, {
+      requestId,
+      operation: 'login',
+      duration: Date.now() - startTime,
+      userAgent,
+      clientIP,
+    });
+
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
