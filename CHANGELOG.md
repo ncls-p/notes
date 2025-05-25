@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1-alpha.1] - 2025-05-25
+
+### Added
+- **Enhanced Folder Management (Completes `Task-NT-001.8`):**
+  - Implemented folder rename functionality with modal dialog in [`/dashboard`](app/dashboard/page.tsx:152).
+  - Added edit button to folder cards with rename dialog and validation.
+- **Note Editor Implementation (Implements `Task-NT-002.7`, `Task-NT-002.9`, `Task-NT-002.10`):**
+  - Created dedicated note editor page at [`/notes/[noteId]`](app/notes/[noteId]/page.tsx:15) with CodeMirror 6 integration.
+  - Implemented real-time Markdown editor with syntax highlighting using `@uiw/react-codemirror` and `@codemirror/lang-markdown`.
+  - Added split-view functionality with live Markdown preview using `react-markdown`, `remark-gfm`, `rehype-sanitize`, and `rehype-highlight`.
+  - Implemented auto-save detection with unsaved changes warnings and browser unload protection.
+  - Added manual save functionality with visual feedback for save states.
+  - Enhanced [`/dashboard`](app/dashboard/page.tsx:361) with functional edit buttons linking to note editor.
+- **Markdown Preview Enhancement (Implements `US-NT-003`):**
+  - Integrated comprehensive Markdown rendering with GitHub Flavored Markdown support.
+  - Added syntax highlighting for code blocks using `rehype-highlight`.
+  - Implemented sanitized HTML output for security using `rehype-sanitize`.
+  - Enhanced CSS styling for prose content with proper typography and spacing.
+
+### Fixed
+- **Environment Configuration Issue:**
+  - Resolved login 500 error by adding missing `REFRESH_TOKEN_SECRET` environment variable to [`.env`](.env:10).
+  - Fixed "Internal server configuration error" in [`/api/auth/login`](app/api/auth/login/route.ts:36) endpoint.
+
+### Technical Improvements
+- Added comprehensive CSS styling for Markdown preview with proper typography, code highlighting, and table formatting.
+- Enhanced error handling and loading states in note editor.
+- Implemented proper TypeScript types for CodeMirror and Markdown components.
+- Added responsive design for note editor with mobile-friendly interface.
+
+### Dependencies
+- Added `@uiw/react-codemirror` for advanced code editing capabilities.
+- Added `@codemirror/lang-markdown` for Markdown syntax highlighting in editor.
+- Added `react-markdown` ecosystem (`remark-gfm`, `rehype-sanitize`, `rehype-highlight`) for enhanced Markdown rendering.
+
 ## [0.1.0-alpha.1] - 2025-05-23
 
 ### Added

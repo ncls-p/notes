@@ -100,7 +100,7 @@ This section outlines the essential features required for the initial, usable ve
   - **Task-NT-001.5 (API):** Implement `/api/folders` GET API route to list folders (hierarchically or flat with parent IDs, for user). **[DONE]**
   - **Task-NT-001.6 (FE):** Develop Folder Tree/File Explorer UI component (basic version for MVP). **[DONE]**
   - **Task-NT-001.7 (FE):** Implement "Create Folder" functionality (modal or inline). **[DONE]**
-  - **Task-NT-001.8 (FE):** Implement "Rename Folder" functionality. **[PARTIALLY DONE - UI implemented, needs edit functionality]**
+  - **Task-NT-001.8 (FE):** Implement "Rename Folder" functionality. **[DONE]**
   - **Task-NT-001.9 (FE):** Implement "Delete Folder" functionality (with confirmation). **[DONE]**
   - **Task-NT-001.10 (FE):** Display nested folder structure. **[PARTIALLY DONE - basic display implemented, navigation works]**
   - **Task-NT-001.11 (Test):** Unit and Integration tests for folder CRUD API logic. **[IN PROGRESS]**
@@ -114,10 +114,10 @@ This section outlines the essential features required for the initial, usable ve
   - **Task-NT-002.4 (API):** Implement `/api/notes/{noteId}` PUT API route for updating a note (title, content). **[DONE]**
   - **Task-NT-002.5 (API):** Implement `/api/notes/{noteId}` DELETE API route for deleting notes. **[DONE]**
   - **Task-NT-002.6 (API):** Implement GET API route to list notes within a folder or at root (e.g., `/api/folders/{folderId}/notes`, `/api/notes?folderId=null`). **[DONE]**
-  - **Task-NT-002.7 (FE):** Develop Note Editor UI using CodeMirror 6 (basic setup for MVP). **[TODO - needs separate note editor page]**
+  - **Task-NT-002.7 (FE):** Develop Note Editor UI using CodeMirror 6 (basic setup for MVP). **[DONE]**
   - **Task-NT-002.8 (FE):** Implement "Create Note" functionality. **[DONE]**
-  - **Task-NT-002.9 (FE):** Display note content in editor when a note is selected/opened. **[TODO - needs note editor page]**
-  - **Task-NT-002.10 (FE):** Implement saving mechanism for note content (manual save button for MVP, auto-save can be post-MVP). **[TODO - needs note editor page]**
+  - **Task-NT-002.9 (FE):** Display note content in editor when a note is selected/opened. **[DONE]**
+  - **Task-NT-002.10 (FE):** Implement saving mechanism for note content (manual save button for MVP, auto-save can be post-MVP). **[DONE]**
   - **Task-NT-002.11 (FE):** Implement "Delete Note" functionality (with confirmation). **[DONE]**
   - **Task-NT-002.12 (FE):** Integrate note list within the File Explorer UI. **[DONE]**
   - **Task-NT-002.13 (Test):** Unit and Integration tests for note CRUD API logic. **[TODO]**
@@ -125,11 +125,11 @@ This section outlines the essential features required for the initial, usable ve
   - **Task-NT-002.15 (Docs):** Document note API routes. **[DONE - in README.md updates needed]**
 
 - **US-NT-003 (FR-NT-003):** As a User, I want a real-time, side-by-side preview of my Markdown notes as I type so that I can see the rendered output immediately.
-  - **Task-NT-003.1 (FE):** Integrate `react-markdown` (with `remark-gfm`, `rehype-sanitize`, `rehype-highlight`) for Markdown rendering.
-  - **Task-NT-003.2 (FE):** Implement a two-pane layout in the Note Editor (CodeMirror input, rendered preview).
-  - **Task-NT-003.3 (FE):** Update preview pane in real-time as content changes in CodeMirror.
-  - **Task-NT-003.4 (FE):** (Optional for MVP, Nice to have) Ensure synchronized scrolling between editor and preview panes.
-  - **Task-NT-003.5 (Test):** Test Markdown rendering for common elements (headers, lists, bold, italic, code blocks, links).
+   - **Task-NT-003.1 (FE):** Integrate `react-markdown` (with `remark-gfm`, `rehype-sanitize`, `rehype-highlight`) for Markdown rendering. **[DONE]**
+   - **Task-NT-003.2 (FE):** Implement a two-pane layout in the Note Editor (CodeMirror input, rendered preview). **[DONE]**
+   - **Task-NT-003.3 (FE):** Update preview pane in real-time as content changes in CodeMirror. **[DONE]**
+   - **Task-NT-003.4 (FE):** (Optional for MVP, Nice to have) Ensure synchronized scrolling between editor and preview panes. **[TODO - enhancement for future version]**
+   - **Task-NT-003.5 (Test):** Test Markdown rendering for common elements (headers, lists, bold, italic, code blocks, links). **[TODO]**
 
 ---
 ## Post-MVP Enhancements (Future Iterations)

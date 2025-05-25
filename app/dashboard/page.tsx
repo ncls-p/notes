@@ -43,6 +43,8 @@ export default function Dashboard() {
   const [isCreateNoteOpen, setIsCreateNoteOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [editingFolder, setEditingFolder] = useState<{ id: string; name: string } | null>(null);
+  const [editFolderName, setEditFolderName] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -130,6 +132,35 @@ export default function Dashboard() {
       loadData();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to delete note');
+    }
+  };
+
+  const startRenameFolder = (folder: Folder) => {
+    setEditingFolder({ id: folder.id, name: folder.name });
+    setEditFolderName(folder.name);
+  };
+
+  const cancelRenameFolder = () => {
+    setEditingFolder(null);
+    setEditFolderName('');
+  };
+
+  const renameFolder = async () => {
+    if (!editingFolder || !editFolderName.trim()) return;
+
+    try {
+      await apiClient(`/api/folders/${editingFolder.id}`, {
+        method: 'PUT',
+        body: {
+          name: editFolderName,
+        },
+      });
+
+      setEditingFolder(null);
+      setEditFolderName('');
+      loadData();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to rename folder');
     }
   };
 
@@ -233,6 +264,29 @@ export default function Dashboard() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Rename Folder Dialog */}
+            <Dialog open={!!editingFolder} onOpenChange={() => cancelRenameFolder()}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Rename Folder</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <Input
+                    placeholder="Folder name"
+                    value={editFolderName}
+                    onChange={(e) => setEditFolderName(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && renameFolder()}
+                  />
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" onClick={cancelRenameFolder}>
+                      Cancel
+                    </Button>
+                    <Button onClick={renameFolder}>Rename</Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {/* Error Display */}
@@ -260,6 +314,16 @@ export default function Dashboard() {
                         {folder.name}
                       </div>
                       <div className="flex space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startRenameFolder(folder);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -294,7 +358,11 @@ export default function Dashboard() {
                         {note.title}
                       </div>
                       <div className="flex space-x-1">
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.location.href = `/notes/${note.id}`}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
                         <Button
