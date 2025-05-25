@@ -24,7 +24,7 @@ export async function PUT(
       );
     }
 
-    const { folderId } = params;
+    const { folderId } = await params;
 
     // Verify folder exists and belongs to user
     const existingFolder = await prisma.folder.findFirst({
@@ -149,7 +149,7 @@ export async function DELETE(
       );
     }
 
-    const { folderId } = params;
+    const { folderId } = await params;
 
     // Verify folder exists and belongs to user
     const existingFolder = await prisma.folder.findFirst({

@@ -25,7 +25,7 @@ export async function GET(
       );
     }
 
-    const { noteId } = params;
+    const { noteId } = await params;
 
     const note = await prisma.note.findFirst({
       where: {
@@ -80,7 +80,7 @@ export async function PUT(
       );
     }
 
-    const { noteId } = params;
+    const { noteId } = await params;
 
     // Verify note exists and belongs to user
     const existingNote = await prisma.note.findFirst({
@@ -189,7 +189,7 @@ export async function DELETE(
       );
     }
 
-    const { noteId } = params;
+    const { noteId } = await params;
 
     // Verify note exists and belongs to user
     const existingNote = await prisma.note.findFirst({
