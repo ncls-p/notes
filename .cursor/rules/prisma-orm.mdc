@@ -1,0 +1,23 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Prisma ORM Guide
+
+This project uses Prisma as its Object-Relational Mapper (ORM) for database interactions.
+
+Key points for Prisma usage:
+
+-   **Schema Definition**: The database schema is defined in `prisma/schema.prisma` ([prisma/schema.prisma](mdc:prisma/schema.prisma)). This file is the single source of truth for your database models and relations.
+-   **Migrations**: Database migrations are managed by Prisma Migrate. After changing the `schema.prisma` file, you typically run `npx prisma migrate dev` to create and apply migrations.
+-   **Prisma Client**: Prisma Client is an auto-generated and type-safe query builder that you use to interact with your database. It's usually instantiated and used in your API routes or server-side logic.
+    -   You can generate the client by running `npx prisma generate` after any schema changes.
+-   **Database Connection**: The database connection URL is typically set in an environment variable (e.g., `DATABASE_URL`) defined in a `.env` file (which should be in `.gitignore` ([.gitignore](mdc:.gitignore))).
+
+Common Prisma commands:
+-   `npx prisma format`: Formats your `schema.prisma` file.
+-   `npx prisma db push`: (For prototyping) Pushes the schema state to the database without creating a migration file. Not recommended for production.
+-   `npx prisma studio`: Opens a local GUI to view and edit data in your database.
+
+Refer to the official Prisma documentation for more detailed information.

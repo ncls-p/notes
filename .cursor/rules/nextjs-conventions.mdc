@@ -1,0 +1,22 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Next.js Development Guide
+
+This project uses Next.js with the App Router.
+
+Key conventions and files:
+
+-   **App Router**: Located in `src/app/`.
+    -   Pages are defined by `page.tsx` (or `.js`, `.jsx`) files within route segments (directories).
+    -   Layouts are defined by `layout.tsx` files and apply to child segments.
+    -   Loading UI is defined by `loading.tsx` files.
+    -   Error UI is defined by `error.tsx` files.
+    -   Route Handlers (API routes) are typically in `src/app/api/.../route.ts`.
+-   **Public Assets**: Static assets are served from the `public/` directory. For example, `public/image.png` is accessible at `/image.png`.
+-   **Configuration**: Next.js specific configurations are in `next.config.ts` ([next.config.ts](mdc:next.config.ts)).
+-   **TypeScript**: The project uses TypeScript, configured via `tsconfig.json` ([tsconfig.json](mdc:tsconfig.json)). Type declarations for Next.js are in `next-env.d.ts` ([next-env.d.ts](mdc:next-env.d.ts)).
+
+For more details on Next.js conventions, refer to the official Next.js documentation.
