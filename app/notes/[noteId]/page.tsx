@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Save, Eye, Edit3 } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Edit3, Split } from 'lucide-react';
 import apiClient from '@/lib/apiClient';
 import dynamic from 'next/dynamic';
+import { useTheme } from 'next-themes';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
@@ -16,6 +17,7 @@ import rehypeHighlight from 'rehype-highlight';
 
 // Dynamic import for CodeMirror to avoid SSR issues
 const CodeMirror = dynamic(() => import('@uiw/react-codemirror'), { ssr: false });
+import { EditorView } from '@codemirror/view'; // Needed for scroll event
 
 interface Note {
   id: string;
@@ -31,6 +33,7 @@ export default function NoteEditor() {
   const params = useParams();
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
+  const { theme: appTheme } = useTheme();
   const noteId = params.noteId as string;
 
   const [note, setNote] = useState<Note | null>(null);
@@ -39,9 +42,12 @@ export default function NoteEditor() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [viewMode, setViewMode] = useState<'preview' | 'edit' | 'split'>('preview'); // Default to preview
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [markdownExtension, setMarkdownExtension] = useState<any>(null);
+  const editorRef = useRef<any>(null); // Ref for CodeMirror editor view
+  const previewRef = useRef<HTMLDivElement>(null); // Ref for preview pane
+  const isSyncingScroll = useRef(false); // To prevent scroll event loops
 
   // Load markdown extension dynamically
   useEffect(() => {
@@ -73,6 +79,41 @@ export default function NoteEditor() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
+
+
+  // Synchronized scrolling effect
+  useEffect(() => {
+    const editorEl = editorRef.current?.view?.scrollDOM;
+    const previewEl = previewRef.current;
+
+    if (viewMode !== 'split' || !editorEl || !previewEl) {
+      return; // Only apply if in split view and refs are available
+    }
+
+    const syncScrollEditorToPreview = () => {
+      if (isSyncingScroll.current) return;
+      isSyncingScroll.current = true;
+      const editorScrollPercentage = editorEl.scrollTop / (editorEl.scrollHeight - editorEl.clientHeight);
+      previewEl.scrollTop = editorScrollPercentage * (previewEl.scrollHeight - previewEl.clientHeight);
+      requestAnimationFrame(() => { isSyncingScroll.current = false; });
+    };
+
+    const syncScrollPreviewToEditor = () => {
+      if (isSyncingScroll.current) return;
+      isSyncingScroll.current = true;
+      const previewScrollPercentage = previewEl.scrollTop / (previewEl.scrollHeight - previewEl.clientHeight);
+      editorEl.scrollTop = previewScrollPercentage * (editorEl.scrollHeight - editorEl.clientHeight);
+      requestAnimationFrame(() => { isSyncingScroll.current = false; });
+    };
+
+    editorEl.addEventListener('scroll', syncScrollEditorToPreview);
+    previewEl.addEventListener('scroll', syncScrollPreviewToEditor);
+
+    return () => {
+      editorEl.removeEventListener('scroll', syncScrollEditorToPreview);
+      previewEl.removeEventListener('scroll', syncScrollPreviewToEditor);
+    };
+  }, [viewMode, content]); // Re-attach if viewMode or content (affecting scrollHeight) changes
 
   const loadNote = async () => {
     try {
@@ -196,20 +237,28 @@ export default function NoteEditor() {
             </div>
             <div className="flex items-center space-x-2">
               <Button
-                variant="outline"
-                onClick={() => setShowPreview(!showPreview)}
+                variant={viewMode === 'preview' ? 'default' : 'outline'}
+                onClick={() => setViewMode('preview')}
+                size="icon"
+                title="Preview"
               >
-                {showPreview ? (
-                  <>
-                    <Edit3 className="w-4 h-4 mr-2" />
-                    Edit
-                  </>
-                ) : (
-                  <>
-                    <Eye className="w-4 h-4 mr-2" />
-                    Preview
-                  </>
-                )}
+                <Eye className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'edit' ? 'default' : 'outline'}
+                onClick={() => setViewMode('edit')}
+                size="icon"
+                title="Edit"
+              >
+                <Edit3 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'split' ? 'default' : 'outline'}
+                onClick={() => setViewMode('split')}
+                size="icon"
+                title="Split View"
+              >
+                <Split className="w-4 h-4" />
               </Button>
               <Button onClick={saveNote} disabled={saving || !hasUnsavedChanges}>
                 <Save className="w-4 h-4 mr-2" />
@@ -229,16 +278,45 @@ export default function NoteEditor() {
         </div>
       )}
 
-      {/* Editor */}
+      {/* Editor & Preview Area */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {showPreview ? (
-            <Card>
+        <div
+          className={`px-4 py-6 sm:px-0 ${
+            viewMode === 'split' ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : ''
+          }`}
+        >
+          {/* Editor Column */}
+          {(viewMode === 'edit' || viewMode === 'split') && (
+            <Card className={viewMode === 'edit' ? 'md:col-span-2' : ''}>
+              <CardHeader>
+                <CardTitle>Edit</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <CodeMirror
+                  value={content}
+                  onChange={handleContentChange}
+                  extensions={[
+                    markdownExtension && markdownExtension(),
+                    EditorView.lineWrapping, // Optional: ensure line wrapping
+                  ].filter(Boolean)}
+                  theme={appTheme === 'dark' ? 'dark' : 'light'}
+                  placeholder="Start writing your note in Markdown..."
+                  className="min-h-[calc(100vh-220px)]"
+                  height="calc(100vh - 220px)"
+                  ref={editorRef} // Assign ref to CodeMirror
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Preview Column */}
+          {(viewMode === 'preview' || viewMode === 'split') && (
+            <Card className={viewMode === 'preview' ? 'md:col-span-2' : ''}>
               <CardHeader>
                 <CardTitle>Preview</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="prose max-w-none">
+              <CardContent ref={previewRef} className="overflow-y-auto h-[calc(100vh-220px)]">
+                <div className="prose max-w-none dark:prose-invert">
                   {content ? (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
@@ -250,19 +328,6 @@ export default function NoteEditor() {
                     <p className="text-gray-500">No content to preview</p>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="p-0">
-                <CodeMirror
-                  value={content}
-                  onChange={handleContentChange}
-                  extensions={[markdownExtension && markdownExtension()].filter(Boolean)}
-                  theme="light"
-                  placeholder="Start writing your note in Markdown..."
-                  className="min-h-[500px]"
-                />
               </CardContent>
             </Card>
           )}

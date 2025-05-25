@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Integrated `ThemeProvider` ([`components/ThemeProvider.tsx`](components/ThemeProvider.tsx:1)) into the main layout ([`app/layout.tsx`](app/layout.tsx:1)) to manage theme state.
   - Updated global styles ([`app/globals.css`](app/globals.css:1)) and Tailwind configuration ([`tailwind.config.ts`](tailwind.config.ts:1)) to support the new theming structure.
 
+### Changed
+- **Note Editor Enhancements ([`app/notes/[noteId]/page.tsx`](app/notes/[noteId]/page.tsx:1)):**
+  - Default view is now "Preview" only.
+  - Added view mode controls to switch between "Preview", "Edit" (editor only), and "Split" (side-by-side editor and preview).
+  - Implemented synchronized scrolling between editor and preview panes in "Split" view.
+  - CodeMirror editor theme now dynamically adapts to the application's light/dark theme.
+- **Dashboard Improvements ([`app/dashboard/page.tsx`](app/dashboard/page.tsx:1)):**
+  - Implemented full breadcrumb navigation for nested folders, allowing users to easily navigate back through the folder hierarchy.
+
 ### Fixed
 - Resolved a React hydration error caused by client-side theme class modifications on the `<html>` tag by adding `suppressHydrationWarning` to [`app/layout.tsx`](app/layout.tsx:28).
 - Corrected an issue where light and dark themes appeared identical on the dashboard by applying theme-aware styling to the main dashboard container and its child elements in [`app/dashboard/page.tsx`](app/dashboard/page.tsx:183).

@@ -36,6 +36,7 @@ export default function Dashboard() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [breadcrumbPath, setBreadcrumbPath] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,8 +51,30 @@ export default function Dashboard() {
   useEffect(() => {
     if (user) {
       loadData();
+      if (currentFolderId) {
+        loadBreadcrumbPath(currentFolderId);
+      } else {
+        setBreadcrumbPath([]);
+      }
     }
   }, [user, currentFolderId]);
+
+  const loadBreadcrumbPath = async (folderId: string) => {
+    const path: Folder[] = [];
+    let currentId: string | null = folderId;
+    try {
+      while (currentId) {
+        const folderData = await apiClient(`/api/folders/${currentId}`, { method: 'GET' }) as Folder;
+        path.unshift(folderData); // Add to the beginning of the path
+        currentId = folderData.parentId;
+      }
+      setBreadcrumbPath(path);
+    } catch (err) {
+      console.error('Failed to load breadcrumb path:', err);
+      // Potentially set an error state for breadcrumbs or clear it
+      setBreadcrumbPath([]); // Clear path on error
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -225,11 +248,29 @@ export default function Dashboard() {
                     onClick={() => setCurrentFolderId(null)}
                     className="inline-flex items-center text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors"
                   >
-                    <Folder className="w-4 h-4 mr-2" />
+                    <Folder className="w-4 h-4 mr-1.5" />
                     Root
                   </button>
                 </li>
-                {/* TODO: Add breadcrumb for nested folders - style to match */}
+                {breadcrumbPath.map((folder, index) => (
+                  <li key={folder.id} className="inline-flex items-center">
+                    <svg className="w-3 h-3 text-slate-400 dark:text-slate-500 mx-1" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 6 10">
+                      <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 9 4-4-4-4"/>
+                    </svg>
+                    {index === breadcrumbPath.length - 1 ? (
+                      <span className="text-sm font-medium text-slate-500 dark:text-slate-400 ms-1 md:ms-2">
+                        {folder.name}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setCurrentFolderId(folder.id)}
+                        className="inline-flex items-center text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors ms-1 md:ms-2"
+                      >
+                        {folder.name}
+                      </button>
+                    )}
+                  </li>
+                ))}
               </ol>
             </nav>
           </div>
