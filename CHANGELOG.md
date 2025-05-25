@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1-alpha.1] - 2025-05-25
+
+### Added
+- **Dashboard UI/UX Overhaul & Theming:**
+  - Redesigned the [`/dashboard`](app/dashboard/page.tsx:1) to align with the main page's aesthetic, featuring a dark theme with gradient backgrounds and accent colors.
+  - Implemented light and dark mode support across the dashboard and its components (header, cards, dialogs, buttons, text).
+  - Added a `ThemeToggle` component ([`components/ThemeToggle.tsx`](components/ThemeToggle.tsx:1)) to allow users to switch between light, dark, and system themes.
+  - Integrated `ThemeProvider` ([`components/ThemeProvider.tsx`](components/ThemeProvider.tsx:1)) into the main layout ([`app/layout.tsx`](app/layout.tsx:1)) to manage theme state.
+  - Updated global styles ([`app/globals.css`](app/globals.css:1)) and Tailwind configuration ([`tailwind.config.ts`](tailwind.config.ts:1)) to support the new theming structure.
+
+### Fixed
+- Resolved a React hydration error caused by client-side theme class modifications on the `<html>` tag by adding `suppressHydrationWarning` to [`app/layout.tsx`](app/layout.tsx:28).
+- Corrected an issue where light and dark themes appeared identical on the dashboard by applying theme-aware styling to the main dashboard container and its child elements in [`app/dashboard/page.tsx`](app/dashboard/page.tsx:183).
+
 ## [0.3.0-alpha.1] - 2025-05-25
 
 ### Added
