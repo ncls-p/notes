@@ -1,25 +1,25 @@
 "use client";
 
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from '@/components/ui/context-menu';
+} from "@/components/ui/context-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { useAuth } from '@/contexts/AuthContext';
-import apiClient from '@/lib/apiClient';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
+import apiClient from "@/lib/apiClient";
 import {
   ExternalLink,
   FileText,
@@ -32,8 +32,8 @@ import {
   Plus,
   Search,
   Trash2,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 interface Folder {
   id: string;
@@ -58,7 +58,7 @@ interface Note {
 
 interface SearchResult {
   id: string;
-  type: 'folder' | 'note';
+  type: "folder" | "note";
   name: string;
   title?: string;
   contentMarkdown?: string | null;
@@ -79,12 +79,14 @@ export default function Dashboard() {
   const [breadcrumbPath, setBreadcrumbPath] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [sortOption, setSortOption] = useState<'name' | 'createdAt' | 'updatedAt'>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortOption, setSortOption] = useState<
+    "name" | "createdAt" | "updatedAt"
+  >("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // Form states
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
@@ -98,35 +100,41 @@ export default function Dashboard() {
   const [editFolderName, setEditFolderName] = useState("");
 
   // Search functionality
-  const performSearch = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setIsSearching(false);
-      return;
-    }
+  const performSearch = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setSearchResults([]);
+        setIsSearching(false);
+        return;
+      }
 
-    try {
-      setIsSearching(true);
-      setError(null);
+      try {
+        setIsSearching(true);
+        setError(null);
 
-      const searchApiUrl = `/api/search?query=${encodeURIComponent(query)}&sortBy=${
-        sortOption === 'name' ? 'name' : sortOption
-      }&sortOrder=${sortOrder}&limit=50`;
+        const searchApiUrl = `/api/search?query=${encodeURIComponent(query)}&sortBy=${
+          sortOption === "name" ? "name" : sortOption
+        }&sortOrder=${sortOrder}&limit=50`;
 
-      console.log('Dashboard: Performing search with URL:', searchApiUrl);
+        console.log("Dashboard: Performing search with URL:", searchApiUrl);
 
-      const response = (await apiClient(searchApiUrl, { method: 'GET' })) as {
-        results: SearchResult[];
-      };
-      setSearchResults(response.results || []);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to search');
-      console.error('Dashboard: Failed to search:', err);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
+        const response = (await apiClient(searchApiUrl, { method: "GET" })) as {
+          results: SearchResult[];
+        };
+        setSearchResults(response.results || []);
+      } catch (err: unknown) {
+        const errorMessage =
+          (err as { response?: { data?: { error?: string } } })?.response?.data
+            ?.error || "Failed to search";
+        setError(errorMessage);
+        console.error("Dashboard: Failed to search:", err);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [sortOption, sortOrder],
+  );
 
   // Debounced search
   useEffect(() => {
@@ -140,54 +148,18 @@ export default function Dashboard() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, sortOption, sortOrder]);
+  }, [searchQuery, sortOption, sortOrder, performSearch]);
 
   // Determine what content to display
   const isSearchMode = searchQuery.trim().length > 0;
   const filteredFolders = isSearchMode
-    ? searchResults.filter((result) => result.type === 'folder')
+    ? searchResults.filter((result) => result.type === "folder")
     : folders;
   const filteredNotes = isSearchMode
-    ? searchResults.filter((result) => result.type === 'note')
+    ? searchResults.filter((result) => result.type === "note")
     : notes;
 
-  useEffect(() => {
-    if (user) {
-      loadData();
-      if (currentFolderId) {
-        loadBreadcrumbPath(currentFolderId);
-      } else {
-        setBreadcrumbPath([]);
-      }
-    }
-  }, [user, currentFolderId, sortOption, sortOrder]);
-
-      const [foldersResponse, notesResponse] = await Promise.all([
-        apiClient(`/api/folders?parentId=${currentFolderId || "null"}`, {
-          method: "GET",
-        }),
-        apiClient(`/api/notes?folderId=${currentFolderId || "null"}`, {
-          method: "GET",
-        }),
-      ]);
-
-      setFolders(foldersResponse as Folder[]);
-      setNotes(notesResponse as Note[]);
-    } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { error?: string } } })?.response?.data
-          ?.error || "Failed to load data",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [currentFolderId]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const _loadBreadcrumbPath = async (folderId: string) => {
+  const loadBreadcrumbPath = useCallback(async (folderId: string) => {
     const path: Folder[] = [];
     let currentId: string | null = folderId;
     try {
@@ -203,38 +175,59 @@ export default function Dashboard() {
       console.error("Failed to load breadcrumb path:", err);
       setBreadcrumbPath([]);
     }
-  };
+  }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const notesSortBy = sortOption === 'name' ? 'title' : sortOption;
+      const notesSortBy = sortOption === "name" ? "title" : sortOption;
       const folderApiUrl = `/api/folders?parentId=${
-        currentFolderId || 'null'
+        currentFolderId || "null"
       }&sortBy=${sortOption}&sortOrder=${sortOrder}`;
       const notesApiUrl = `/api/notes?folderId=${
-        currentFolderId || 'null'
+        currentFolderId || "null"
       }&sortBy=${notesSortBy}&sortOrder=${sortOrder}`;
 
-      console.log('Dashboard: Fetching folders with URL:', folderApiUrl);
-      console.log('Dashboard: Fetching notes with URL:', notesApiUrl);
+      console.log("Dashboard: Fetching folders with URL:", folderApiUrl);
+      console.log("Dashboard: Fetching notes with URL:", notesApiUrl);
 
       const [foldersResponse, notesResponse] = await Promise.all([
-        apiClient(folderApiUrl, { method: 'GET' }),
-        apiClient(notesApiUrl, { method: 'GET' }),
+        apiClient(folderApiUrl, { method: "GET" }),
+        apiClient(notesApiUrl, { method: "GET" }),
       ]);
 
       setFolders(foldersResponse as Folder[]);
       setNotes(notesResponse as Note[]);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to load data');
-      console.error('Dashboard: Failed to load data:', err);
+    } catch (err: unknown) {
+      const errorMessage =
+        (err as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Failed to load data";
+      setError(errorMessage);
+      console.error("Dashboard: Failed to load data:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentFolderId, sortOption, sortOrder]);
+
+  useEffect(() => {
+    if (user) {
+      loadData();
+      if (currentFolderId) {
+        loadBreadcrumbPath(currentFolderId);
+      } else {
+        setBreadcrumbPath([]);
+      }
+    }
+  }, [
+    user,
+    currentFolderId,
+    sortOption,
+    sortOrder,
+    loadData,
+    loadBreadcrumbPath,
+  ]);
 
   const createFolder = async () => {
     if (!newFolderName.trim()) return;
@@ -316,12 +309,12 @@ export default function Dashboard() {
     setEditFolderName(folder.name);
   };
 
-  const cancelRenameFolder = () => {
+  const _cancelRenameFolder = () => {
     setEditingFolder(null);
     setEditFolderName("");
   };
 
-  const renameFolder = async () => {
+  const _renameFolder = async () => {
     if (!editingFolder || !editFolderName.trim()) return;
 
     try {
@@ -343,12 +336,12 @@ export default function Dashboard() {
     }
   };
 
-  const handleSortChange = (option: 'name' | 'createdAt' | 'updatedAt') => {
+  const handleSortChange = (option: "name" | "createdAt" | "updatedAt") => {
     if (option === sortOption) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortOption(option);
-      setSortOrder('asc');
+      setSortOrder("asc");
     }
     // loadData will be called by the useEffect hook due to sortOption/sortOrder dependency change
   };
@@ -420,49 +413,55 @@ export default function Dashboard() {
             </div>
           </div>
           {/* Search Bar - Centered */}
-          <div className='flex justify-center items-center pt-2 pb-4'>
-            <div className='relative w-full max-w-xl'>
+          <div className="flex justify-center items-center pt-2 pb-4">
+            <div className="relative w-full max-w-xl">
               <Input
-                type='search'
-                placeholder='Search across all notes and folders...'
+                type="search"
+                placeholder="Search across all notes and folders..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className='pl-10 pr-4 py-3 w-full rounded-lg bg-background/50 backdrop-blur-sm border-border focus:border-primary smooth-hover text-lg'
+                className="pl-10 pr-4 py-3 w-full rounded-lg bg-background/50 backdrop-blur-sm border-border focus:border-primary smooth-hover text-lg"
               />
-              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground' />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             </div>
           </div>
         </div>
       </header>
 
       {/* Controls Bar */}
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap justify-between items-center gap-4 border-b border-border'>
-        <div className='flex items-center space-x-2'>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap justify-between items-center gap-4 border-b border-border">
+        <div className="flex items-center space-x-2">
           {/* Create Folder Dialog */}
-          <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
+          <Dialog
+            open={isCreateFolderOpen}
+            onOpenChange={setIsCreateFolderOpen}
+          >
             <DialogTrigger asChild>
-              <Button variant='default' className='group'>
-                <Plus className='w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200' />
+              <Button variant="default" className="group">
+                <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200" />
                 New Folder
               </Button>
             </DialogTrigger>
-            <DialogContent className='glass-effect animate-fade-in-scale'>
+            <DialogContent className="glass-effect animate-fade-in-scale">
               <DialogHeader>
                 <DialogTitle>Create New Folder</DialogTitle>
               </DialogHeader>
-              <div className='space-y-4 py-4'>
+              <div className="space-y-4 py-4">
                 <Input
-                  placeholder='Folder name'
+                  placeholder="Folder name"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && createFolder()}
-                  className='smooth-hover'
+                  onKeyPress={(e) => e.key === "Enter" && createFolder()}
+                  className="smooth-hover"
                 />
-                <div className='flex justify-end space-x-2'>
-                  <Button variant='outline' onClick={() => setIsCreateFolderOpen(false)}>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsCreateFolderOpen(false)}
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={createFolder} variant='default'>
+                  <Button onClick={createFolder} variant="default">
                     Create
                   </Button>
                 </div>
@@ -473,28 +472,31 @@ export default function Dashboard() {
           {/* Create Note Dialog */}
           <Dialog open={isCreateNoteOpen} onOpenChange={setIsCreateNoteOpen}>
             <DialogTrigger asChild>
-              <Button variant='outline' className='group smooth-hover'>
-                <Plus className='w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200' />
+              <Button variant="outline" className="group smooth-hover">
+                <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200" />
                 New Note
               </Button>
             </DialogTrigger>
-            <DialogContent className='glass-effect animate-fade-in-scale'>
+            <DialogContent className="glass-effect animate-fade-in-scale">
               <DialogHeader>
                 <DialogTitle>Create New Note</DialogTitle>
               </DialogHeader>
-              <div className='space-y-4 py-4'>
+              <div className="space-y-4 py-4">
                 <Input
-                  placeholder='Note title'
+                  placeholder="Note title"
                   value={newNoteTitle}
                   onChange={(e) => setNewNoteTitle(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && createNote()}
-                  className='smooth-hover'
+                  onKeyPress={(e) => e.key === "Enter" && createNote()}
+                  className="smooth-hover"
                 />
-                <div className='flex justify-end space-x-2'>
-                  <Button variant='outline' onClick={() => setIsCreateNoteOpen(false)}>
+                <div className="flex justify-end space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsCreateNoteOpen(false)}
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={createNote} variant='default'>
+                  <Button onClick={createNote} variant="default">
                     Create
                   </Button>
                 </div>
@@ -503,75 +505,77 @@ export default function Dashboard() {
           </Dialog>
         </div>
 
-        <div className='flex items-center space-x-3'>
+        <div className="flex items-center space-x-3">
           {/* Sort Options - Added Here */}
-          <div className='flex items-center space-x-1 bg-muted/30 p-1 rounded-lg'>
+          <div className="flex items-center space-x-1 bg-muted/30 p-1 rounded-lg">
             <Button
-              variant={sortOption === 'name' ? 'default' : 'ghost'}
-              size='sm'
-              onClick={() => handleSortChange('name')}
-              className='smooth-hover'
+              variant={sortOption === "name" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => handleSortChange("name")}
+              className="smooth-hover"
               title={
-                sortOption === 'name'
-                  ? sortOrder === 'asc'
-                    ? 'Sort by Name (Ascending)'
-                    : 'Sort by Name (Descending)'
-                  : 'Sort by Name'
+                sortOption === "name"
+                  ? sortOrder === "asc"
+                    ? "Sort by Name (Ascending)"
+                    : "Sort by Name (Descending)"
+                  : "Sort by Name"
               }
             >
-              Name {sortOption === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+              Name {sortOption === "name" && (sortOrder === "asc" ? "↑" : "↓")}
             </Button>
             <Button
-              variant={sortOption === 'createdAt' ? 'default' : 'ghost'}
-              size='sm'
-              onClick={() => handleSortChange('createdAt')}
-              className='smooth-hover'
+              variant={sortOption === "createdAt" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => handleSortChange("createdAt")}
+              className="smooth-hover"
               title={
-                sortOption === 'createdAt'
-                  ? sortOrder === 'asc'
-                    ? 'Sort by Date Created (Ascending)'
-                    : 'Sort by Date Created (Descending)'
-                  : 'Sort by Date Created'
+                sortOption === "createdAt"
+                  ? sortOrder === "asc"
+                    ? "Sort by Date Created (Ascending)"
+                    : "Sort by Date Created (Descending)"
+                  : "Sort by Date Created"
               }
             >
-              Created {sortOption === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+              Created{" "}
+              {sortOption === "createdAt" && (sortOrder === "asc" ? "↑" : "↓")}
             </Button>
             <Button
-              variant={sortOption === 'updatedAt' ? 'default' : 'ghost'}
-              size='sm'
-              onClick={() => handleSortChange('updatedAt')}
-              className='smooth-hover'
+              variant={sortOption === "updatedAt" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => handleSortChange("updatedAt")}
+              className="smooth-hover"
               title={
-                sortOption === 'updatedAt'
-                  ? sortOrder === 'asc'
-                    ? 'Sort by Date Modified (Ascending)'
-                    : 'Sort by Date Modified (Descending)'
-                  : 'Sort by Date Modified'
+                sortOption === "updatedAt"
+                  ? sortOrder === "asc"
+                    ? "Sort by Date Modified (Ascending)"
+                    : "Sort by Date Modified (Descending)"
+                  : "Sort by Date Modified"
               }
             >
-              Modified {sortOption === 'updatedAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+              Modified{" "}
+              {sortOption === "updatedAt" && (sortOrder === "asc" ? "↑" : "↓")}
             </Button>
           </div>
 
           {/* View Mode Toggle */}
-          <div className='flex items-center space-x-1 bg-muted/30 p-1 rounded-lg'>
+          <div className="flex items-center space-x-1 bg-muted/30 p-1 rounded-lg">
             <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
-              onClick={() => setViewMode('grid')}
-              size='sm'
-              className='smooth-hover'
-              title='Grid View'
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              onClick={() => setViewMode("grid")}
+              size="sm"
+              className="smooth-hover"
+              title="Grid View"
             >
-              <Grid className='w-4 h-4' />
+              <Grid className="w-4 h-4" />
             </Button>
             <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
-              onClick={() => setViewMode('list')}
-              size='sm'
-              className='smooth-hover'
-              title='List View'
+              variant={viewMode === "list" ? "default" : "ghost"}
+              onClick={() => setViewMode("list")}
+              size="sm"
+              className="smooth-hover"
+              title="List View"
             >
-              <List className='w-4 h-4' />
+              <List className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -630,9 +634,10 @@ export default function Dashboard() {
 
           {/* Search Results Header */}
           {isSearchMode && !isSearching && (
-            <div className='p-4 bg-primary/10 border border-primary/30 text-primary rounded-lg shadow-md animate-slide-in-bottom'>
-              <span className='font-semibold'>Search Results:</span> Found{' '}
-              {filteredFolders.length + filteredNotes.length} items matching "{searchQuery}"
+            <div className="p-4 bg-primary/10 border border-primary/30 text-primary rounded-lg shadow-md animate-slide-in-bottom">
+              <span className="font-semibold">Search Results:</span> Found{" "}
+              {filteredFolders.length + filteredNotes.length} items matching "
+              {searchQuery}"
             </div>
           )}
 
@@ -645,13 +650,13 @@ export default function Dashboard() {
 
           {/* Loading State */}
           {loading || isSearching ? (
-            <div className='text-center py-12'>
-              <div className='space-y-4'>
-                <div className='flex justify-center'>
-                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+            <div className="text-center py-12">
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-                <div className='text-muted-foreground'>
-                  {isSearching ? 'Searching...' : 'Loading content...'}
+                <div className="text-muted-foreground">
+                  {isSearching ? "Searching..." : "Loading content..."}
                 </div>
               </div>
             </div>
@@ -691,15 +696,21 @@ export default function Dashboard() {
                               </CardTitle>
                             </div>
                           </CardHeader>
-                          <CardContent onClick={() => setCurrentFolderId(folder.id)}>
-                            <p className='text-sm text-muted-foreground mb-2'>
-                              {folder.childrenCount || 0} folders, {folder.notesCount || 0} notes
+                          <CardContent
+                            onClick={() => setCurrentFolderId(folder.id)}
+                          >
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {folder.childrenCount || 0} folders,{" "}
+                              {folder.notesCount || 0} notes
                             </p>
-                            {isSearchMode && 'path' in folder && (
-                              <p className='text-xs text-muted-foreground mb-1'>📁 {folder.path}</p>
+                            {isSearchMode && "path" in folder && (
+                              <p className="text-xs text-muted-foreground mb-1">
+                                📁 {folder.path}
+                              </p>
                             )}
-                            <p className='text-xs text-muted-foreground'>
-                              Updated: {new Date(folder.updatedAt).toLocaleDateString()}{' '}
+                            <p className="text-xs text-muted-foreground">
+                              Updated:{" "}
+                              {new Date(folder.updatedAt).toLocaleDateString()}{" "}
                               {new Date(folder.updatedAt).toLocaleTimeString()}
                             </p>
                           </CardContent>
@@ -716,15 +727,19 @@ export default function Dashboard() {
                             <h3 className="font-semibold group-hover:text-primary transition-colors">
                               {folder.name}
                             </h3>
-                            <p className='text-sm text-muted-foreground'>
-                              {folder.childrenCount || 0} folders, {folder.notesCount || 0} notes
+                            <p className="text-sm text-muted-foreground">
+                              {folder.childrenCount || 0} folders,{" "}
+                              {folder.notesCount || 0} notes
                             </p>
-                            {isSearchMode && 'path' in folder && (
-                              <p className='text-xs text-muted-foreground'>📁 {folder.path}</p>
+                            {isSearchMode && "path" in folder && (
+                              <p className="text-xs text-muted-foreground">
+                                📁 {folder.path}
+                              </p>
                             )}
                           </div>
-                          <div className='text-xs text-muted-foreground'>
-                            Updated: {new Date(folder.updatedAt).toLocaleDateString()}{' '}
+                          <div className="text-xs text-muted-foreground">
+                            Updated:{" "}
+                            {new Date(folder.updatedAt).toLocaleDateString()}{" "}
                             {new Date(folder.updatedAt).toLocaleTimeString()}
                           </div>
                         </div>
@@ -742,9 +757,9 @@ export default function Dashboard() {
                     {!isSearchMode && (
                       <ContextMenuItem
                         onClick={() => startRenameFolder(folder as Folder)}
-                        className='smooth-hover'
+                        className="smooth-hover"
                       >
-                        <Pencil className='mr-2 h-4 w-4' />
+                        <Pencil className="mr-2 h-4 w-4" />
                         Rename
                       </ContextMenuItem>
                     )}
@@ -804,11 +819,14 @@ export default function Dashboard() {
                                 <span className="italic">No content</span>
                               )}
                             </p>
-                            {isSearchMode && 'path' in note && (
-                              <p className='text-xs text-muted-foreground mb-1'>📁 {note.path}</p>
+                            {isSearchMode && "path" in note && (
+                              <p className="text-xs text-muted-foreground mb-1">
+                                📁 {note.path}
+                              </p>
                             )}
-                            <p className='text-xs text-muted-foreground'>
-                              Updated: {new Date(note.updatedAt).toLocaleDateString()}{' '}
+                            <p className="text-xs text-muted-foreground">
+                              Updated:{" "}
+                              {new Date(note.updatedAt).toLocaleDateString()}{" "}
                               {new Date(note.updatedAt).toLocaleTimeString()}
                             </p>
                           </CardContent>
@@ -827,17 +845,21 @@ export default function Dashboard() {
                             <h3 className="font-semibold group-hover:text-primary transition-colors">
                               {note.title}
                             </h3>
-                            <p className='text-sm text-muted-foreground truncate'>
-                              {note.contentMarkdown && note.contentMarkdown.length > 100
+                            <p className="text-sm text-muted-foreground truncate">
+                              {note.contentMarkdown &&
+                              note.contentMarkdown.length > 100
                                 ? `${note.contentMarkdown.substring(0, 100)}...`
-                                : note.contentMarkdown || 'No content'}
+                                : note.contentMarkdown || "No content"}
                             </p>
-                            {isSearchMode && 'path' in note && (
-                              <p className='text-xs text-muted-foreground'>📁 {note.path}</p>
+                            {isSearchMode && "path" in note && (
+                              <p className="text-xs text-muted-foreground">
+                                📁 {note.path}
+                              </p>
                             )}
                           </div>
-                          <div className='text-xs text-muted-foreground'>
-                            Updated: {new Date(note.updatedAt).toLocaleDateString()}{' '}
+                          <div className="text-xs text-muted-foreground">
+                            Updated:{" "}
+                            {new Date(note.updatedAt).toLocaleDateString()}{" "}
                             {new Date(note.updatedAt).toLocaleTimeString()}
                           </div>
                         </div>
@@ -871,32 +893,40 @@ export default function Dashboard() {
                 filteredNotes.length === 0 &&
                 !loading &&
                 !isSearching && (
-                  <div className='col-span-full text-center py-16 animate-fade-in-scale'>
-                    <div className='space-y-6'>
-                      <div className='relative'>
-                        <Folder className='w-20 h-20 mx-auto text-muted-foreground/50 animate-float' />
-                        <div className='absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center'>
-                          <Plus className='w-4 h-4 text-white' />
+                  <div className="col-span-full text-center py-16 animate-fade-in-scale">
+                    <div className="space-y-6">
+                      <div className="relative">
+                        <Folder className="w-20 h-20 mx-auto text-muted-foreground/50 animate-float" />
+                        <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                          <Plus className="w-4 h-4 text-white" />
                         </div>
                       </div>
-                      <div className='space-y-3'>
-                        <h3 className='text-2xl font-semibold'>
-                          {searchQuery ? 'No results found' : 'This folder is empty'}
+                      <div className="space-y-3">
+                        <h3 className="text-2xl font-semibold">
+                          {searchQuery
+                            ? "No results found"
+                            : "This folder is empty"}
                         </h3>
-                        <p className='text-muted-foreground max-w-md mx-auto'>
+                        <p className="text-muted-foreground max-w-md mx-auto">
                           {searchQuery
                             ? `No folders or notes match "${searchQuery}". Try a different search term.`
-                            : 'Create your first folder or note to get started on your knowledge journey.'}
+                            : "Create your first folder or note to get started on your knowledge journey."}
                         </p>
                       </div>
                       {!searchQuery && (
-                        <div className='flex justify-center space-x-4 pt-4'>
-                          <Button onClick={() => setIsCreateFolderOpen(true)} variant='default'>
-                            <Plus className='w-4 h-4 mr-2' />
+                        <div className="flex justify-center space-x-4 pt-4">
+                          <Button
+                            onClick={() => setIsCreateFolderOpen(true)}
+                            variant="default"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
                             Create Folder
                           </Button>
-                          <Button onClick={() => setIsCreateNoteOpen(true)} variant='outline'>
-                            <Plus className='w-4 h-4 mr-2' />
+                          <Button
+                            onClick={() => setIsCreateNoteOpen(true)}
+                            variant="outline"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
                             Create Note
                           </Button>
                         </div>
