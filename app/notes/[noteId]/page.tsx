@@ -14,6 +14,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import rehypeHighlight from 'rehype-highlight';
+import { Mermaid } from '@/components/Mermaid';
 
 // Dynamic import for CodeMirror to avoid SSR issues
 const CodeMirror = dynamic(() => import('@uiw/react-codemirror'), { ssr: false });
@@ -473,6 +474,18 @@ export default function NoteEditor() {
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeSanitize, rehypeHighlight]}
+                      components={{
+                        code({node, className, children, ...props}: React.ComponentPropsWithoutRef<'code'> & {node?: any}) {
+                          const match = /language-(\w+)/.exec(className || '');
+                          return match?.[1] === 'mermaid' ? (
+                            <Mermaid code={String(children).replace(/\n$/, '')} />
+                          ) : (
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          );
+                        }
+                      }}
                     >
                       {content}
                     </ReactMarkdown>
