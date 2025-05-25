@@ -56,6 +56,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // If token is invalid, clear it
             clearAuthTokens();
           }
+        } else {
+          // Try to refresh the token using the refresh token cookie
+          try {
+            const response = await fetch('/api/auth/refresh-token', {
+              method: 'POST',
+              credentials: 'include', // Include cookies for refresh token
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.accessToken) {
+                // Decode the new token and set user
+                try {
+                  const base64Url = data.accessToken.split('.')[1];
+                  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                  }).join(''));
+
+                  const decoded = JSON.parse(jsonPayload);
+
+                  if (decoded.userId && decoded.email && isMounted) {
+                    setAccessToken(data.accessToken); // Store the new token
+                    setUser({
+                      id: decoded.userId,
+                      email: decoded.email
+                    });
+                    setIsAuthenticated(true);
+                  }
+                } catch (decodeError) {
+                  console.error('Failed to decode refreshed token:', decodeError);
+                }
+              }
+            }
+          } catch (refreshError) {
+            // Refresh failed, user will remain unauthenticated
+            console.warn('Token refresh failed:', refreshError);
+          }
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);

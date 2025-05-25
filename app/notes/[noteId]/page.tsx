@@ -30,7 +30,7 @@ interface Note {
 export default function NoteEditor() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const noteId = params.noteId as string;
 
   const [note, setNote] = useState<Note | null>(null);
@@ -48,7 +48,7 @@ export default function NoteEditor() {
     const loadMarkdown = async () => {
       try {
         const { markdown } = await import('@codemirror/lang-markdown');
-        setMarkdownExtension(markdown);
+        setMarkdownExtension(() => markdown);
       } catch (error) {
         console.warn('Failed to load markdown extension:', error);
       }
@@ -136,8 +136,20 @@ export default function NoteEditor() {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div>Checking authentication...</div>
+      </div>
+    );
+  }
+
   if (!user) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div>Please log in to access this page.</div>
+      </div>
+    );
   }
 
   if (loading) {
