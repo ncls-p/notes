@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Resolved a React hydration error caused by client-side theme class modifications on the `<html>` tag by adding `suppressHydrationWarning` to [`app/layout.tsx`](app/layout.tsx:28).
 - Corrected an issue where light and dark themes appeared identical on the dashboard by applying theme-aware styling to the main dashboard container and its child elements in [`app/dashboard/page.tsx`](app/dashboard/page.tsx:183).
+- Fixed dark and light mode inconsistencies on the note editor page ([`app/notes/[noteId]/page.tsx`](app/notes/[noteId]/page.tsx:1)) by updating page container, header, loading states, and text elements to use theme-aware Tailwind CSS classes (e.g., `bg-background`, `text-foreground`, `bg-card`).
 
 ## [0.3.0-alpha.1] - 2025-05-25
 

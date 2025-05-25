@@ -179,7 +179,7 @@ export default function NoteEditor() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
         <div>Checking authentication...</div>
       </div>
     );
@@ -187,7 +187,7 @@ export default function NoteEditor() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
         <div>Please log in to access this page.</div>
       </div>
     );
@@ -195,7 +195,7 @@ export default function NoteEditor() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
         <div>Loading note...</div>
       </div>
     );
@@ -203,21 +203,21 @@ export default function NoteEditor() {
 
   if (error && !note) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={goBack}>Go Back</Button>
+          <p className="text-red-500 dark:text-red-400 mb-4">{error}</p>
+          <Button onClick={goBack} variant="outline">Go Back</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30 selection:text-primary-foreground">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-card border-b border-border shadow sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+          <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <Button variant="ghost" onClick={goBack}>
                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -227,11 +227,11 @@ export default function NoteEditor() {
                 <Input
                   value={title}
                   onChange={(e) => handleTitleChange(e.target.value)}
-                  className="text-xl font-semibold border-none shadow-none focus:ring-0"
+                  className="text-xl font-semibold border-none shadow-none focus:ring-0 bg-transparent placeholder:text-muted-foreground"
                   placeholder="Note title..."
                 />
                 {hasUnsavedChanges && (
-                  <span className="ml-2 text-sm text-orange-600">• Unsaved</span>
+                  <span className="ml-2 text-sm text-orange-500 dark:text-orange-400">• Unsaved</span>
                 )}
               </div>
             </div>
@@ -272,14 +272,14 @@ export default function NoteEditor() {
       {/* Error Display */}
       {error && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div className="p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg">
             {error}
           </div>
         </div>
       )}
 
       {/* Editor & Preview Area */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8 flex-grow">
         <div
           className={`px-4 py-6 sm:px-0 ${
             viewMode === 'split' ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : ''
