@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -515,12 +515,12 @@ export default function NoteEditor() {
                       rehypePlugins={[rehypeSanitize, rehypeHighlight]}
                       components={{
                         code({
-                          node,
+                          node: _node,
                           className,
                           children,
                           ...props
                         }: React.ComponentPropsWithoutRef<"code"> & {
-                          node?: any;
+                          node?: unknown;
                         }) {
                           const match = /language-(\w+)/.exec(className || "");
                           return match?.[1] === "mermaid" ? (

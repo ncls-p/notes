@@ -1,44 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
-import { verifyJWT } from '@/lib/auth/serverAuth';
-import { apiLogger, logError, logDatabaseOperation, logPerformance } from '@/lib/logger';
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+import { verifyJWT } from "@/lib/auth/serverAuth";
+import {
+  apiLogger,
+  logError,
+  logDatabaseOperation,
+  logPerformance,
+} from "@/lib/logger";
 
 const prisma = new PrismaClient();
 
 // Schema for search query
 const searchSchema = z.object({
-  query: z.string().min(1, 'Search query is required').max(255, 'Search query too long'),
-  sortBy: z.enum(['relevance', 'name', 'createdAt', 'updatedAt']).optional().default('relevance'),
-  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+  query: z
+    .string()
+    .min(1, "Search query is required")
+    .max(255, "Search query too long"),
+  sortBy: z
+    .enum(["relevance", "name", "createdAt", "updatedAt"])
+    .optional()
+    .default("relevance"),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
   limit: z.number().min(1).max(100).optional().default(50),
 });
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
-  const requestId = request.headers.get('x-request-id') || 'unknown';
-  const userId = request.headers.get('x-user-id');
+  const requestId = request.headers.get("x-request-id") || "unknown";
+  const userId = request.headers.get("x-user-id");
 
   const logger = apiLogger.child({
     requestId,
-    operation: 'search',
+    operation: "search",
     userId,
   });
 
-  logger.info('Search started');
+  logger.info("Search started");
 
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
-      logger.warn({ reason: 'auth_failed' }, 'Search failed: unauthorized');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      logger.warn({ reason: "auth_failed" }, "Search failed: unauthorized");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('query');
-    const sortBy = searchParams.get('sortBy');
-    const sortOrder = searchParams.get('sortOrder');
-    const limit = searchParams.get('limit');
+    const query = searchParams.get("query");
+    const sortBy = searchParams.get("sortBy");
+    const sortOrder = searchParams.get("sortOrder");
+    const limit = searchParams.get("limit");
 
     // Validate query parameters
     const validatedQuery = searchSchema.safeParse({
@@ -54,11 +65,14 @@ export async function GET(request: NextRequest) {
           validationErrors: validatedQuery.error.errors,
           queryParams: { query, sortBy, sortOrder, limit },
         },
-        'Search validation failed'
+        "Search validation failed",
       );
       return NextResponse.json(
-        { error: 'Invalid query parameters', details: validatedQuery.error.errors },
-        { status: 400 }
+        {
+          error: "Invalid query parameters",
+          details: validatedQuery.error.errors,
+        },
+        { status: 400 },
       );
     }
 
@@ -71,15 +85,16 @@ export async function GET(request: NextRequest) {
 
     logger.debug(
       {
-        query: searchQuery.substring(0, 50) + (searchQuery.length > 50 ? '...' : ''),
+        query:
+          searchQuery.substring(0, 50) + (searchQuery.length > 50 ? "..." : ""),
         sortBy: validSortBy,
         sortOrder: validSortOrder,
         limit: validLimit,
       },
-      'Search parameters validated'
+      "Search parameters validated",
     );
 
-    const searchTerm = `%${searchQuery.toLowerCase()}%`;
+    const _searchTerm = `%${searchQuery.toLowerCase()}%`;
 
     // Search folders
     const foldersSearchStartTime = Date.now();
@@ -88,7 +103,7 @@ export async function GET(request: NextRequest) {
         ownerId: authResult.userId,
         name: {
           contains: searchQuery,
-          mode: 'insensitive',
+          mode: "insensitive",
         },
       },
       include: {
@@ -107,10 +122,15 @@ export async function GET(request: NextRequest) {
       },
       take: validLimit,
     });
-    logDatabaseOperation('findMany', 'folder', Date.now() - foldersSearchStartTime, {
-      searchQuery: searchQuery.substring(0, 20) + '...',
-      count: folders.length,
-    });
+    logDatabaseOperation(
+      "findMany",
+      "folder",
+      Date.now() - foldersSearchStartTime,
+      {
+        searchQuery: searchQuery.substring(0, 20) + "...",
+        count: folders.length,
+      },
+    );
 
     // Search notes
     const notesSearchStartTime = Date.now();
@@ -121,13 +141,13 @@ export async function GET(request: NextRequest) {
           {
             title: {
               contains: searchQuery,
-              mode: 'insensitive',
+              mode: "insensitive",
             },
           },
           {
             contentMarkdown: {
               contains: searchQuery,
-              mode: 'insensitive',
+              mode: "insensitive",
             },
           },
         ],
@@ -142,14 +162,21 @@ export async function GET(request: NextRequest) {
       },
       take: validLimit,
     });
-    logDatabaseOperation('findMany', 'note', Date.now() - notesSearchStartTime, {
-      searchQuery: searchQuery.substring(0, 20) + '...',
-      count: notes.length,
-    });
+    logDatabaseOperation(
+      "findMany",
+      "note",
+      Date.now() - notesSearchStartTime,
+      {
+        searchQuery: searchQuery.substring(0, 20) + "...",
+        count: notes.length,
+      },
+    );
 
     // Build folder paths for each result
-    const buildFolderPath = async (folderId: string | null): Promise<string> => {
-      if (!folderId) return 'Root';
+    const buildFolderPath = async (
+      folderId: string | null,
+    ): Promise<string> => {
+      if (!folderId) return "Root";
 
       const path: string[] = [];
       let currentId: string | null = folderId;
@@ -166,7 +193,7 @@ export async function GET(request: NextRequest) {
         currentId = folder.parentId;
       }
 
-      return path.length > 0 ? path.join(' / ') : 'Root';
+      return path.length > 0 ? path.join(" / ") : "Root";
     };
 
     // Add folder paths to results
@@ -174,39 +201,41 @@ export async function GET(request: NextRequest) {
       folders.map(async (folder) => ({
         ...folder,
         path: await buildFolderPath(folder.parentId),
-        type: 'folder' as const,
-      }))
+        type: "folder" as const,
+      })),
     );
 
     const notesWithPaths = await Promise.all(
       notes.map(async (note) => ({
         ...note,
         path: await buildFolderPath(note.folderId),
-        type: 'note' as const,
-      }))
+        type: "note" as const,
+      })),
     );
 
     // Combine and sort results
     let allResults = [...foldersWithPaths, ...notesWithPaths];
 
     // Sort results based on sortBy parameter
-    if (validSortBy === 'name') {
+    if (validSortBy === "name") {
       allResults.sort((a, b) => {
-        const nameA = a.type === 'folder' ? a.name : a.title;
-        const nameB = b.type === 'folder' ? b.name : b.title;
-        return validSortOrder === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+        const nameA = a.type === "folder" ? a.name : a.title;
+        const nameB = b.type === "folder" ? b.name : b.title;
+        return validSortOrder === "asc"
+          ? nameA.localeCompare(nameB)
+          : nameB.localeCompare(nameA);
       });
-    } else if (validSortBy === 'createdAt') {
+    } else if (validSortBy === "createdAt") {
       allResults.sort((a, b) => {
         const dateA = new Date(a.createdAt).getTime();
         const dateB = new Date(b.createdAt).getTime();
-        return validSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+        return validSortOrder === "asc" ? dateA - dateB : dateB - dateA;
       });
-    } else if (validSortBy === 'updatedAt') {
+    } else if (validSortBy === "updatedAt") {
       allResults.sort((a, b) => {
         const dateA = new Date(a.updatedAt).getTime();
         const dateB = new Date(b.updatedAt).getTime();
-        return validSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+        return validSortOrder === "asc" ? dateA - dateB : dateB - dateA;
       });
     }
     // For 'relevance', we keep the default order from the database
@@ -216,7 +245,8 @@ export async function GET(request: NextRequest) {
 
     logger.info(
       {
-        query: searchQuery.substring(0, 50) + (searchQuery.length > 50 ? '...' : ''),
+        query:
+          searchQuery.substring(0, 50) + (searchQuery.length > 50 ? "..." : ""),
         foldersFound: folders.length,
         notesFound: notes.length,
         totalResults: allResults.length,
@@ -224,11 +254,11 @@ export async function GET(request: NextRequest) {
         sortOrder: validSortOrder,
         totalDuration: Date.now() - startTime,
       },
-      'Search completed successfully'
+      "Search completed successfully",
     );
 
-    logPerformance(logger, 'search', startTime, {
-      query: searchQuery.substring(0, 20) + '...',
+    logPerformance(logger, "search", startTime, {
+      query: searchQuery.substring(0, 20) + "...",
       totalResults: allResults.length,
       foldersFound: folders.length,
       notesFound: notes.length,
@@ -238,14 +268,16 @@ export async function GET(request: NextRequest) {
       results: allResults.map((result) => ({
         id: result.id,
         type: result.type,
-        name: result.type === 'folder' ? result.name : result.title,
-        title: result.type === 'note' ? result.title : undefined,
-        contentMarkdown: result.type === 'note' ? result.contentMarkdown : undefined,
+        name: result.type === "folder" ? result.name : result.title,
+        title: result.type === "note" ? result.title : undefined,
+        contentMarkdown:
+          result.type === "note" ? result.contentMarkdown : undefined,
         path: result.path,
-        folderId: result.type === 'note' ? result.folderId : result.parentId,
-        folder: result.type === 'note' ? result.folder : result.parent,
-        childrenCount: result.type === 'folder' ? result._count?.children : undefined,
-        notesCount: result.type === 'folder' ? result._count?.notes : undefined,
+        folderId: result.type === "note" ? result.folderId : result.parentId,
+        folder: result.type === "note" ? result.folder : result.parent,
+        childrenCount:
+          result.type === "folder" ? result._count?.children : undefined,
+        notesCount: result.type === "folder" ? result._count?.notes : undefined,
         createdAt: result.createdAt,
         updatedAt: result.updatedAt,
       })),
@@ -255,11 +287,14 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     logError(logger, error, {
       requestId,
-      operation: 'search',
+      operation: "search",
       userId: userId,
       duration: Date.now() - startTime,
     });
 
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
