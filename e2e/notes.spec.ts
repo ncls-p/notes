@@ -14,8 +14,8 @@ test.describe('Note Management', () => {
     await page.fill('input[name="confirmPassword"]', testPassword);
     await page.click('button[type="submit"]');
 
-    // Should redirect to login
-    await expect(page).toHaveURL('/login');
+    // Should redirect to login with success message
+    await expect(page).toHaveURL(new RegExp('/login\\?message=registration-success'));
 
     // Login
     await page.fill('input[name="email"]', testEmail);
@@ -110,9 +110,11 @@ test.describe('Note Management', () => {
   });
 
   test('should edit and save note content', async ({ page }) => {
-    // Create a note first
+    // Create a note first by opening the New Note dialog
     const noteTitle = `Save Test ${Date.now()}`;
-    await page.click('button:has-text("Create Note")');
+    await page.waitForSelector('button:has-text("New Note")', { state: 'visible' });
+    await page.click('button:has-text("New Note")');
+    await page.waitForSelector('input[name="title"]', { state: 'visible' });
     await page.fill('input[name="title"]', noteTitle);
     await page.click('button[type="submit"]:has-text("Create")');
     await expect(page.locator('[role="dialog"]')).not.toBeVisible();
@@ -152,9 +154,11 @@ test.describe('Note Management', () => {
   });
 
   test('should delete a note', async ({ page }) => {
-    // Create a note first
+    // Create a note first by opening the New Note dialog
     const noteTitle = `Delete Test ${Date.now()}`;
-    await page.click('button:has-text("Create Note")');
+    await page.waitForSelector('button:has-text("New Note")', { state: 'visible' });
+    await page.click('button:has-text("New Note")');
+    await page.waitForSelector('input[name="title"]', { state: 'visible' });
     await page.fill('input[name="title"]', noteTitle);
     await page.click('button[type="submit"]:has-text("Create")');
     await expect(page.locator('[role="dialog"]')).not.toBeVisible();
@@ -176,9 +180,11 @@ test.describe('Note Management', () => {
   });
 
   test('should create note inside a folder', async ({ page }) => {
-    // Create a folder first
+    // Create a folder first by opening the New Folder dialog
     const folderName = `Note Folder ${Date.now()}`;
-    await page.click('button:has-text("Create Folder")');
+    await page.waitForSelector('button:has-text("New Folder")', { state: 'visible' });
+    await page.click('button:has-text("New Folder")');
+    await page.waitForSelector('input[name="name"]', { state: 'visible' });
     await page.fill('input[name="name"]', folderName);
     await page.click('button[type="submit"]:has-text("Create")');
     await expect(page.locator('[role="dialog"]')).not.toBeVisible();
@@ -202,9 +208,11 @@ test.describe('Note Management', () => {
   });
 
   test('should show unsaved changes warning', async ({ page }) => {
-    // Create a note first
+    // Create a note first by opening the New Note dialog
     const noteTitle = `Unsaved Test ${Date.now()}`;
-    await page.click('button:has-text("Create Note")');
+    await page.waitForSelector('button:has-text("New Note")', { state: 'visible' });
+    await page.click('button:has-text("New Note")');
+    await page.waitForSelector('input[name="title"]', { state: 'visible' });
     await page.fill('input[name="title"]', noteTitle);
     await page.click('button[type="submit"]:has-text("Create")');
     await expect(page.locator('[role="dialog"]')).not.toBeVisible();
@@ -229,9 +237,11 @@ test.describe('Note Management', () => {
   });
 
   test('should handle auto-save functionality', async ({ page }) => {
-    // Create a note first
+    // Create a note first by opening the New Note dialog
     const noteTitle = `AutoSave Test ${Date.now()}`;
-    await page.click('button:has-text("Create Note")');
+    await page.waitForSelector('button:has-text("New Note")', { state: 'visible' });
+    await page.click('button:has-text("New Note")');
+    await page.waitForSelector('input[name="title"]', { state: 'visible' });
     await page.fill('input[name="title"]', noteTitle);
     await page.click('button[type="submit"]:has-text("Create")');
     await expect(page.locator('[role="dialog"]')).not.toBeVisible();

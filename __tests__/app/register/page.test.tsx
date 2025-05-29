@@ -2,6 +2,11 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import RegisterPage from '@/app/register/page';
+import { AuthProvider } from '@/contexts/AuthContext';
+
+// Setup test environment variables
+process.env.JWT_SECRET = 'test-secret';
+process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret';
 
 // Mock next/navigation
 const mockPush = jest.fn();
@@ -14,6 +19,36 @@ jest.mock('next/navigation', () => ({
 // Mock fetch
 global.fetch = jest.fn();
 
+// Mock the AuthProvider and apiClient
+jest.mock('@/lib/apiClient', () => ({
+  getAccessToken: jest.fn(),
+  setAccessToken: jest.fn(),
+  clearAuthTokens: jest.fn(),
+}));
+
+// Mock clientLogger
+jest.mock('@/lib/clientLogger', () => ({
+  clientLogger: {
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    logError: jest.fn(),
+    logAuthEvent: jest.fn(),
+    time: jest.fn(),
+    timeEnd: jest.fn(),
+  },
+}));
+
+// Test wrapper with AuthProvider
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <AuthProvider>
+      {children}
+    </AuthProvider>
+  );
+};
+
 describe('RegisterPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -21,8 +56,12 @@ describe('RegisterPage', () => {
   });
 
   it('renders the registration form', () => {
-    render(<RegisterPage />);
-    expect(screen.getByRole('heading', { name: /Create Account/i })).toBeInTheDocument();
+    render(
+      <TestWrapper>
+        <RegisterPage />
+      </TestWrapper>
+    );
+    expect(screen.getByRole('heading', { name: /Join Noteworthy/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Email address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^Password$/i)).toBeInTheDocument(); // Exact match for "Password"
     expect(screen.getByLabelText(/Confirm Password/i)).toBeInTheDocument();
@@ -30,7 +69,11 @@ describe('RegisterPage', () => {
   });
 
   it('shows validation errors for empty fields on submit', async () => {
-    render(<RegisterPage />);
+    render(
+      <TestWrapper>
+        <RegisterPage />
+      </TestWrapper>
+    );
     fireEvent.click(screen.getByRole('button', { name: /Create Account/i }));
 
     expect(await screen.findByText('Invalid email address')).toBeInTheDocument();
@@ -39,7 +82,11 @@ describe('RegisterPage', () => {
   });
 
   it('shows validation error for mismatched passwords', async () => {
-    render(<RegisterPage />);
+    render(
+      <TestWrapper>
+        <RegisterPage />
+      </TestWrapper>
+    );
     fireEvent.change(screen.getByLabelText(/Email address/i), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'Password123!' } });
     fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'Password123' } });
@@ -49,7 +96,11 @@ describe('RegisterPage', () => {
   });
 
   it('shows validation error for invalid password format', async () => {
-    render(<RegisterPage />);
+    render(
+      <TestWrapper>
+        <RegisterPage />
+      </TestWrapper>
+    );
     fireEvent.change(screen.getByLabelText(/Email address/i), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'password' } });
     fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'password' } });
@@ -64,7 +115,11 @@ describe('RegisterPage', () => {
       json: async () => ({ id: '1', email: 'test@example.com' }),
     });
 
-    render(<RegisterPage />);
+    render(
+      <TestWrapper>
+        <RegisterPage />
+      </TestWrapper>
+    );
     fireEvent.change(screen.getByLabelText(/Email address/i), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'Password123!' } });
     fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'Password123!' } });
@@ -79,19 +134,23 @@ describe('RegisterPage', () => {
     });
   });
 
-  it('redirects to /login on successful API response', async () => {
+  it('redirects to /login with success message on successful API response', async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
       json: async () => ({ id: '1', email: 'test@example.com' }),
     });
 
-    render(<RegisterPage />);
+    render(
+      <TestWrapper>
+        <RegisterPage />
+      </TestWrapper>
+    );
     fireEvent.change(screen.getByLabelText(/Email address/i), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'Password123!' } });
     fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'Password123!' } });
     fireEvent.click(screen.getByRole('button', { name: /Create Account/i }));
 
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/login'));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/login?message=registration-success'));
   });
 
   it('shows API error message on failed API response', async () => {
@@ -100,7 +159,11 @@ describe('RegisterPage', () => {
       json: async () => ({ error: 'Email already registered' }),
     });
 
-    render(<RegisterPage />);
+    render(
+      <TestWrapper>
+        <RegisterPage />
+      </TestWrapper>
+    );
     fireEvent.change(screen.getByLabelText(/Email address/i), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'Password123!' } });
     fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'Password123!' } });
@@ -115,7 +178,11 @@ describe('RegisterPage', () => {
       json: async () => ({ error: 'Invalid input', details: {email: ['Bad email format'], password: ['Too short']} }),
     });
 
-    render(<RegisterPage />);
+    render(
+      <TestWrapper>
+        <RegisterPage />
+      </TestWrapper>
+    );
     fireEvent.change(screen.getByLabelText(/Email address/i), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'Password123!' } });
     fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'Password123!' } });
@@ -128,7 +195,11 @@ describe('RegisterPage', () => {
   it('shows generic error message on network failure', async () => {
     (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-    render(<RegisterPage />);
+    render(
+      <TestWrapper>
+        <RegisterPage />
+      </TestWrapper>
+    );
     fireEvent.change(screen.getByLabelText(/Email address/i), { target: { value: 'test@example.com' } });
     fireEvent.change(screen.getByLabelText(/^Password$/i), { target: { value: 'Password123!' } });
     fireEvent.change(screen.getByLabelText(/Confirm Password/i), { target: { value: 'Password123!' } });

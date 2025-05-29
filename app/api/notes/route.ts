@@ -16,8 +16,8 @@ const createNoteSchema = z.object({
     .string()
     .min(1, "Note title is required")
     .max(255, "Note title too long"),
-  contentMarkdown: z.string().optional().default(""),
-  folderId: z.string().uuid().optional().nullable(),
+  content: z.string().optional().default(""),
+  folderId: z.string().optional().nullable(),
 });
 
 // Schema for listing notes
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
           validatedData.title.substring(0, 50) +
           (validatedData.title.length > 50 ? "..." : ""),
         folderId: validatedData.folderId,
-        contentLength: validatedData.contentMarkdown?.length || 0,
+        contentLength: validatedData.content?.length || 0,
       },
       "Note data validated",
     );
@@ -161,6 +161,42 @@ export async function POST(request: NextRequest) {
           { status: 409 },
         );
       }
+    } else {
+      // Check for duplicate titles in root folder (no folder)
+      const duplicateCheckStartTime = Date.now();
+      const existingNote = await prisma.note.findFirst({
+        where: {
+          title: validatedData.title,
+          folderId: null,
+          ownerId: authResult.userId,
+        },
+      });
+      logDatabaseOperation(
+        "findFirst",
+        "note",
+        Date.now() - duplicateCheckStartTime,
+        {
+          operation: "duplicate_check_root",
+          title: validatedData.title.substring(0, 20) + "...",
+          folderId: null,
+        },
+      );
+
+      if (existingNote) {
+        logger.warn(
+          {
+            title: validatedData.title.substring(0, 50) + "...",
+            folderId: null,
+            existingNoteId: existingNote.id,
+          },
+          "Note creation failed: duplicate title in root folder",
+        );
+
+        return NextResponse.json(
+          { error: "A note with this title already exists in this location" },
+          { status: 409 },
+        );
+      }
     }
 
     // Create the note
@@ -168,7 +204,7 @@ export async function POST(request: NextRequest) {
     const note = await prisma.note.create({
       data: {
         title: validatedData.title,
-        contentMarkdown: validatedData.contentMarkdown,
+        contentMarkdown: validatedData.content,
         folderId: validatedData.folderId,
         ownerId: authResult.userId,
       },
@@ -212,14 +248,16 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({
-      id: note.id,
-      title: note.title,
-      contentMarkdown: note.contentMarkdown,
-      folderId: note.folderId,
-      folder: note.folder,
-      createdAt: note.createdAt,
-      updatedAt: note.updatedAt,
-    });
+      note: {
+        id: note.id,
+        title: note.title,
+        content: note.contentMarkdown,
+        folderId: note.folderId,
+        folder: note.folder,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      },
+    }, { status: 201 });
   } catch (error) {
     logError(logger, error, {
       requestId,
@@ -269,11 +307,11 @@ export async function GET(request: NextRequest) {
       sortOrder,
     });
 
-    // Validate query parameters
+    // Validate query parameters - use defaults for null values
     const validatedQuery = listNotesSchema.safeParse({
       folderId: folderId === "null" ? null : folderId,
-      sortBy: sortBy,
-      sortOrder: sortOrder,
+      sortBy: sortBy || "title",
+      sortOrder: sortOrder || "asc",
     });
 
     if (!validatedQuery.success) {
@@ -391,17 +429,17 @@ export async function GET(request: NextRequest) {
       sortOrder: validSortOrder,
     });
 
-    return NextResponse.json(
-      notes.map((note) => ({
+    return NextResponse.json({
+      notes: notes.map((note) => ({
         id: note.id,
         title: note.title,
-        contentMarkdown: note.contentMarkdown,
+        content: note.contentMarkdown,
         folderId: note.folderId,
         folder: note.folder,
         createdAt: note.createdAt,
         updatedAt: note.updatedAt,
       })),
-    );
+    });
   } catch (error) {
     logError(logger, error, {
       requestId,

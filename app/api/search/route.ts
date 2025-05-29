@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { verifyJWT } from "@/lib/auth/serverAuth";
 import {
   apiLogger,
@@ -8,6 +9,7 @@ import {
   logPerformance,
 } from "@/lib/logger";
 import prisma from "@/lib/db";
+import { buildFolderPath as buildFolderPathUtil } from "@/lib/utils/buildFolderPath";
 
 // Schema for search query
 const searchSchema = z.object({
@@ -43,11 +45,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get("query");
-    const sortBy = searchParams.get("sortBy");
-    const sortOrder = searchParams.get("sortOrder");
-    const limit = searchParams.get("limit");
+    // Add detailed request logging
+    logger.debug({
+      url: request.url,
+      headers: Object.fromEntries(request.headers.entries()),
+    }, "Request details");
+
+    const urlSearchParams = new URL(request.url).searchParams;
+    const query = urlSearchParams.get("query");
+    const sortBy = urlSearchParams.get("sortBy") || undefined;
+    const sortOrder = urlSearchParams.get("sortOrder") || undefined;
+    const limit = urlSearchParams.get("limit") || undefined;
 
     // Validate query parameters
     const validatedQuery = searchSchema.safeParse({
@@ -81,10 +89,14 @@ export async function GET(request: NextRequest) {
       limit: validLimit,
     } = validatedQuery.data;
 
+    // Ensure searchQuery is defined before substring operations
+    const truncatedQuery = searchQuery
+      ? searchQuery.substring(0, 50) + (searchQuery.length > 50 ? "..." : "")
+      : "";
+
     logger.debug(
       {
-        query:
-          searchQuery.substring(0, 50) + (searchQuery.length > 50 ? "..." : ""),
+        query: truncatedQuery,
         sortBy: validSortBy,
         sortOrder: validSortOrder,
         limit: validLimit,
@@ -99,10 +111,12 @@ export async function GET(request: NextRequest) {
     const folders = await prisma.folder.findMany({
       where: {
         ownerId: authResult.userId,
-        name: {
-          contains: searchQuery,
-          mode: "insensitive",
-        },
+        ...(searchQuery ? {
+          name: {
+            contains: searchQuery,
+            mode: "insensitive",
+          }
+        } : {})
       },
       include: {
         parent: {
@@ -120,13 +134,17 @@ export async function GET(request: NextRequest) {
       },
       take: validLimit,
     });
+    // Safely log folder search operation
+    const folderSearchQuery = searchQuery
+      ? searchQuery.substring(0, 20) + (searchQuery.length > 20 ? "..." : "")
+      : "";
     logDatabaseOperation(
       "findMany",
       "folder",
       Date.now() - foldersSearchStartTime,
       {
-        searchQuery: searchQuery.substring(0, 20) + "...",
-        count: folders.length,
+        searchQuery: folderSearchQuery,
+        count: folders?.length || 0,
       },
     );
 
@@ -160,56 +178,95 @@ export async function GET(request: NextRequest) {
       },
       take: validLimit,
     });
+    // Safely log note search operation
+    const noteSearchQuery = searchQuery
+      ? searchQuery.substring(0, 20) + (searchQuery.length > 20 ? "..." : "")
+      : "";
     logDatabaseOperation(
       "findMany",
       "note",
       Date.now() - notesSearchStartTime,
       {
-        searchQuery: searchQuery.substring(0, 20) + "...",
-        count: notes.length,
+        searchQuery: noteSearchQuery,
+        count: notes?.length || 0,
       },
     );
 
-    // Build folder paths for each result
-    const buildFolderPath = async (
-      folderId: string | null,
-    ): Promise<string> => {
-      if (!folderId) return "Root";
+    // Prefetch all folder IDs needed for path building
+    const allFolderIds = new Set<string>();
+    (folders || []).forEach(folder => {
+      if (folder.parentId) allFolderIds.add(folder.parentId);
+    });
+    (notes || []).forEach(note => {
+      if (note.folderId) allFolderIds.add(note.folderId);
+    });
 
-      const path: string[] = [];
-      let currentId: string | null = folderId;
+    logger.debug(`Prefetching ${allFolderIds.size} parent folders`);
 
-      while (currentId) {
-        const folder: { name: string; parentId: string | null } | null =
-          await prisma.folder.findUnique({
-            where: { id: currentId },
-            select: { name: true, parentId: true },
-          });
+    // If no folder IDs to fetch, skip database query
+    if (allFolderIds.size === 0) {
+      logger.debug("No parent folders to fetch");
+    }
 
-        if (!folder) break;
-        path.unshift(folder.name);
-        currentId = folder.parentId;
+    // Fetch all parent folders in a single query
+    const parentFolders = allFolderIds.size > 0
+      ? await prisma.folder.findMany({
+          where: { id: { in: Array.from(allFolderIds) }},
+          select: { id: true, name: true, parentId: true },
+        })
+      : [];
+
+    logger.debug(`Fetched ${parentFolders.length} parent folders`);
+
+    // Build folder map for path resolution with all ancestors
+    const folderMap = new Map<string, { name: string; parentId: string | null }>();
+    const allAncestors = new Set(parentFolders);
+    const queue = [...parentFolders];
+
+    while (queue.length > 0) {
+      const folder = queue.shift()!;
+      if (folder.parentId && !folderMap.has(folder.parentId)) {
+        const parent = await prisma.folder.findUnique({
+          where: { id: folder.parentId },
+          select: { id: true, name: true, parentId: true },
+        });
+        if (parent) {
+          folderMap.set(parent.id, parent);
+          allAncestors.add(parent);
+          queue.push(parent);
+        }
       }
+    }
 
-      return path.length > 0 ? path.join(" / ") : "Root";
+    // Add all ancestors to the folder map
+    allAncestors.forEach(folder => folderMap.set(folder.id, folder));
+    logger.debug(`Built folder map with ${folderMap.size} entries`);
+
+    /**
+     * Builds the full folder path for a given folder ID using the comprehensive folder map.
+     * Handles null parent references and prevents infinite loops from cyclic references.
+     *
+     * @param {string | null} folderId - The ID of the folder to build the path for
+     * @returns {string} The full folder path as a string
+     */
+    // Use the utility function for building folder paths
+    const buildFolderPath = (folderId: string | null): string => {
+      return buildFolderPathUtil(folderMap, folderId);
     };
 
     // Add folder paths to results
-    const foldersWithPaths = await Promise.all(
-      folders.map(async (folder) => ({
-        ...folder,
-        path: await buildFolderPath(folder.parentId),
-        type: "folder" as const,
-      })),
-    );
+    const foldersWithPaths = (folders || []).map(folder => ({
+      ...folder,
+      path: buildFolderPath(folder.parentId),
+      type: "folder" as const,
+    }));
 
-    const notesWithPaths = await Promise.all(
-      notes.map(async (note) => ({
-        ...note,
-        path: await buildFolderPath(note.folderId),
-        type: "note" as const,
-      })),
-    );
+    const notesWithPaths = (notes || []).map(note => ({
+      ...note,
+      path: buildFolderPath(note.folderId),
+      type: "note" as const,
+    }));
+
 
     // Combine and sort results
     let allResults = [...foldersWithPaths, ...notesWithPaths];
@@ -282,7 +339,7 @@ export async function GET(request: NextRequest) {
       query: searchQuery,
       totalResults: allResults.length,
     });
-  } catch (error) {
+  } catch (error: any) {
     logError(logger, error, {
       requestId,
       operation: "search",
@@ -290,8 +347,17 @@ export async function GET(request: NextRequest) {
       duration: Date.now() - startTime,
     });
 
+    // Enhanced error details
+    const errorDetails = {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name,
+    };
+
+    logger.error(errorDetails, "Internal server error during search");
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: errorDetails },
       { status: 500 },
     );
   }

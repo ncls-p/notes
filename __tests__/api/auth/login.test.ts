@@ -44,6 +44,23 @@ describe('/api/auth/login POST', () => {
   const mockRequest = (body: any) => {
     return {
       json: jest.fn().mockResolvedValue(body),
+      headers: {
+        get: jest.fn().mockImplementation((headerName: string) => {
+          // Return default values for commonly requested headers
+          switch (headerName) {
+            case 'x-request-id':
+              return 'test-request-id';
+            case 'user-agent':
+              return 'jest-test-runner';
+            case 'x-forwarded-for':
+              return '127.0.0.1';
+            case 'x-real-ip':
+              return '127.0.0.1';
+            default:
+              return null;
+          }
+        }),
+      },
     } as unknown as NextRequest;
   };
 
@@ -156,12 +173,22 @@ describe('/api/auth/login POST', () => {
     expect(json.message).toBe('Login successful');
     expect(json.user).toEqual({ id: mockUser.id, email: mockUser.email });
     expect(json.accessToken).toBe('mockAccessToken');
-    expect(response.cookies.get('refreshToken')?.value).toBe('mockRefreshToken');
-    expect(response.cookies.get('refreshToken')?.httpOnly).toBe(true);
-    // expect(response.cookies.get('refreshToken')?.secure).toBe(process.env.NODE_ENV === 'production'); // depends on NODE_ENV
-    expect(response.cookies.get('refreshToken')?.sameSite).toBe('lax');
-    expect(response.cookies.get('refreshToken')?.path).toBe('/');
-    expect(response.cookies.get('refreshToken')?.maxAge).toBe(7 * 24 * 60 * 60);
+
+    // Verify refreshToken cookie
+    const refreshTokenCookie = response.cookies.get('refreshToken');
+    expect(refreshTokenCookie?.value).toBe('mockRefreshToken');
+    expect(refreshTokenCookie?.httpOnly).toBe(true);
+    expect(refreshTokenCookie?.sameSite).toBe('lax');
+    expect(refreshTokenCookie?.path).toBe('/');
+    expect(refreshTokenCookie?.maxAge).toBe(7 * 24 * 60 * 60);
+
+    // Verify auth_token cookie
+    const authTokenCookie = response.cookies.get('auth_token');
+    expect(authTokenCookie?.value).toBe('mockAccessToken');
+    expect(authTokenCookie?.httpOnly).toBe(true);
+    expect(authTokenCookie?.sameSite).toBe('lax');
+    expect(authTokenCookie?.path).toBe('/');
+    expect(authTokenCookie?.maxAge).toBe(15 * 60);
 
     expect(jwt.sign).toHaveBeenCalledWith(
       { userId: mockUser.id, email: mockUser.email },

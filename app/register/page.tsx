@@ -98,21 +98,20 @@ export default function RegisterPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        setApiError(errorData.error || 'Registration failed. Please try again.');
+        // Build detailed error message from validation errors
+        let errorMessage = errorData.error || 'Registration failed. Please try again.';
         if (errorData.details) {
-          // Optionally, you could try to map these to form errors
-          // For now, just log them or show a generic part of them
-          console.error('Validation details:', errorData.details);
-          let detailedMessages = '';
-          if (errorData.details.email)
-            detailedMessages += `Email: ${errorData.details.email.join(', ')}. `;
-          if (errorData.details.password)
-            detailedMessages += `Password: ${errorData.details.password.join(', ')}. `;
-          if (detailedMessages) setApiError((prev) => `${prev} ${detailedMessages.trim()}`);
+          // Create a more user-friendly message
+          if (errorData.details.email) {
+            errorMessage += ` Email: ${errorData.details.email.join(', ')}.`;
+          }
+          if (errorData.details.password) {
+            errorMessage += ` Password: ${errorData.details.password.join(', ')}.`;
+          }
         }
+        setApiError(errorMessage);
       } else {
-        // Handle success (Task-UM-001.10)
-        router.push('/login');
+        router.push('/login?message=registration-success');
       }
     } catch (error) {
       console.error('Registration request failed:', error);
@@ -200,7 +199,10 @@ export default function RegisterPage() {
 
           <CardContent className='space-y-6'>
             {apiError && (
-              <div className='p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg text-sm animate-slide-in-bottom'>
+              <div
+                className='p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg text-sm animate-slide-in-bottom'
+                data-testid='error-message'
+              >
                 <div className='flex items-center space-x-2'>
                   <div className='w-2 h-2 bg-destructive rounded-full'></div>
                   <span>{apiError}</span>

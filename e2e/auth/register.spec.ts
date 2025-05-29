@@ -44,7 +44,7 @@ test.describe('Registration Flow', () => {
     // and the backend is set up to handle it.
     // In a real scenario, you might need to ensure the DB state or mock this.
     await page.getByRole('button', { name: 'Create Account' }).click();
-    await page.waitForURL('/login'); // Wait for the first registration to complete
+    await page.waitForURL(new RegExp('/login\\?message=registration-success'));
 
     // Now, attempt to register with the same email again
     await page.goto('/register');

@@ -23,6 +23,15 @@ const mockClearAuthTokens = clearAuthTokens as jest.MockedFunction<typeof clearA
 describe('AuthContext', () => {
   const mockPush = jest.fn();
 
+  // Helper to create valid JWT tokens for testing
+  const createTestJWT = (payload: any) => {
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
+    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    const signature = 'test-signature';
+    return `${encodedHeader}.${encodedPayload}.${signature}`;
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseRouter.mockReturnValue({
@@ -87,7 +96,9 @@ describe('AuthContext', () => {
     });
 
     it('should initialize as authenticated when token exists', async () => {
-      mockGetAccessToken.mockReturnValue('existing-token');
+      const testPayload = { userId: 'test-user', email: 'test@example.com' };
+      const validJWT = createTestJWT(testPayload);
+      mockGetAccessToken.mockReturnValue(validJWT);
 
       render(
         <AuthProvider>
@@ -126,7 +137,9 @@ describe('AuthContext', () => {
     });
 
     it('should handle logout correctly', async () => {
-      mockGetAccessToken.mockReturnValue('existing-token');
+      const testPayload = { userId: 'test-user', email: 'test@example.com' };
+      const validJWT = createTestJWT(testPayload);
+      mockGetAccessToken.mockReturnValue(validJWT);
 
       render(
         <AuthProvider>
@@ -253,7 +266,9 @@ describe('AuthContext', () => {
     });
 
     it('should provide stable context values when state does not change', async () => {
-      mockGetAccessToken.mockReturnValue('token');
+      const testPayload = { userId: 'test-user', email: 'test@example.com' };
+      const validJWT = createTestJWT(testPayload);
+      mockGetAccessToken.mockReturnValue(validJWT);
 
       let renderCount = 0;
       const TestComponentRenderCounter = () => {
@@ -310,7 +325,9 @@ describe('AuthContext', () => {
         return <div data-testid='child2'>{isLoading.toString()}</div>;
       };
 
-      mockGetAccessToken.mockReturnValue('token');
+      const testPayload = { userId: 'test-user', email: 'test@example.com' };
+      const validJWT = createTestJWT(testPayload);
+      mockGetAccessToken.mockReturnValue(validJWT);
 
       render(
         <AuthProvider>
@@ -350,7 +367,9 @@ describe('AuthContext', () => {
     });
 
     it('should logout and redirect even if clearAuthTokens throws', async () => {
-      mockGetAccessToken.mockReturnValue('existing-token'); // Start authenticated
+      const testPayload = { userId: 'test-user', email: 'test@example.com' };
+      const validJWT = createTestJWT(testPayload);
+      mockGetAccessToken.mockReturnValue(validJWT); // Start authenticated
       mockClearAuthTokens.mockImplementation(() => {
         throw new Error('Clear tokens error');
       });
@@ -439,7 +458,7 @@ describe('AuthContext', () => {
 
       // Force a state change
       act(() => {
-        loginFn('test-token');
+        loginFn('test-token', { id: 'test-user', email: 'test@example.com', name: 'Test User' });
       });
 
       rerender(

@@ -18,7 +18,9 @@ test.describe('Login Flow', () => {
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByLabel('Confirm Password').fill(password);
     await page.getByRole('button', { name: 'Create Account' }).click();
-    await page.waitForURL('/login'); // Wait for redirection to login after registration
+    await page.waitForURL((url) => {
+      return url.pathname.includes('/login') && url.search.includes('message=registration-success');
+    });
     await page.close();
     await context.close();
   });

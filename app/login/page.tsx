@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -38,8 +38,10 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function LoginPage() {
   const { login, isLoading, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [_email, _setEmail] = useState("");
   const [apiError, setApiError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -57,6 +59,14 @@ export default function LoginPage() {
       clearAuthTokens();
     }
   }, [isLoading, user]);
+
+  useEffect(() => {
+    // Check for success message from registration
+    const message = searchParams.get('message');
+    if (message === 'registration-success') {
+      setSuccessMessage('Registration successful! Please sign in.');
+    }
+  }, [searchParams]);
 
   const {
     register,
@@ -191,8 +201,23 @@ export default function LoginPage() {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {successMessage && (
+              <div
+                className="p-4 bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 rounded-lg text-sm animate-slide-in-bottom"
+                data-testid="success-message"
+              >
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>{successMessage}</span>
+                </div>
+              </div>
+            )}
+
             {apiError && (
-              <div className="p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg text-sm animate-slide-in-bottom">
+              <div
+                className="p-4 bg-destructive/10 border border-destructive/30 text-destructive rounded-lg text-sm animate-slide-in-bottom"
+                data-testid="error-message"
+              >
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-destructive rounded-full"></div>
                   <span>{apiError}</span>

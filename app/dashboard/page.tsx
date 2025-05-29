@@ -397,7 +397,7 @@ export default function Dashboard() {
                 Noteworthy
               </h1>
             </div>
-            <div className="flex items-center space-x-4 animate-slide-in-right">
+            <div className="flex items-center space-x-4 animate-slide-in-right" data-testid="user-menu">
               <span className="text-muted-foreground hidden sm:inline">
                 Welcome, {user.email}
               </span>
