@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PrismaClient } from "@prisma/client";
 import { verifyJWT } from "@/lib/auth/serverAuth";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/db";
 
 // Schema for updating a folder
 const updateFolderSchema = z.object({

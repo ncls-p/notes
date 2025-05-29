@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/db";
 
 export async function POST(_request: NextRequest) {
   try {

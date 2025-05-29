@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { verify } from 'argon2';
 import jwt from 'jsonwebtoken';
 import { authLogger, logError, logSecurityEvent, logDatabaseOperation, logPerformance } from '@/lib/logger';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/db';
 
 // Zod schema for login input validation (will be defined in Task-UM-002.2)
 const loginSchema = z.object({

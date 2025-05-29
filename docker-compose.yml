@@ -22,10 +22,17 @@ services:
       # Frontend specific (can be prefixed with NEXT_PUBLIC_)
       NEXT_PUBLIC_APP_NAME: 'MyNotesApp'
       # Backend specific (not prefixed with NEXT_PUBLIC_ unless needed by client)
-      DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
       APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY} # For encrypting API keys and other sensitive data
+      # Database configuration for Docker environments
+      DB_HOST: postgres
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      # Override DATABASE_URL to use new host configuration
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
       # Logging/Metrics/Tracing config
       LOG_LEVEL: ${LOG_LEVEL:-info}
       NODE_ENV: ${NODE_ENV:-development}
@@ -44,7 +51,7 @@ services:
     # - app_data:/app/data # For temporary files, logs if not sent to stdout and if needed
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health'] # Assuming a /api/health endpoint
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health'] # Health endpoint check for Docker environment
       interval: 30s
       timeout: 10s
       retries: 3

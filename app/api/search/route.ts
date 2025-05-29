@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PrismaClient } from "@prisma/client";
 import { verifyJWT } from "@/lib/auth/serverAuth";
 import {
   apiLogger,
@@ -8,8 +7,7 @@ import {
   logDatabaseOperation,
   logPerformance,
 } from "@/lib/logger";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/db";
 
 // Schema for search query
 const searchSchema = z.object({

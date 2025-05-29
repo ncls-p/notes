@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { hash } from 'argon2';
 import { z } from 'zod';
 import { authLogger, logError, logSecurityEvent, logDatabaseOperation, logPerformance, logBusinessEvent } from '@/lib/logger';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/db';
 
 const passwordValidation = new RegExp(
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]).{8,}$/
