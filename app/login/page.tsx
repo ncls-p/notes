@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,7 +35,7 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 import { clearAuthTokens } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
 
-export default function LoginPage() {
+function LoginForm() {
   const { login, isLoading, user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -381,5 +381,40 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-1/2 -right-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse-soft"></div>
+        <div className="absolute -bottom-1/2 -left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse-soft delay-1000"></div>
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl animate-float"></div>
+      </div>
+
+      <div className="relative z-10">
+        <Card className="glass-effect border-slate-700/50 shadow-2xl animate-fade-in-scale">
+          <CardContent className="p-8 text-center space-y-4">
+            <div className="loading-shimmer w-16 h-16 rounded-full mx-auto"></div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-slate-200">
+                Loading Login Page
+              </h2>
+              <p className="text-slate-400">Please wait...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginForm />
+    </Suspense>
   );
 }

@@ -20,8 +20,8 @@ test.describe('Session Management', () => {
 
     await page.click('button[type="submit"]');
 
-    // Should redirect to login after successful registration
-    await expect(page).toHaveURL('/login');
+    // Should redirect to login after successful registration (possibly with query parameters)
+    await expect(page).toHaveURL(/\/login/);
 
     // Now login
     await page.fill('input[name="email"]', email);
@@ -44,7 +44,7 @@ test.describe('Session Management', () => {
     await page.goto('/dashboard');
 
     // Should be redirected to login
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL(/\/login/);
   });
 
   test('should logout successfully and clear session', async ({ page }) => {
@@ -60,7 +60,7 @@ test.describe('Session Management', () => {
     await page.fill('input[name="confirmPassword"]', password);
 
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL(/\/login/);
 
     // Login
     await page.fill('input[name="email"]', email);
@@ -80,10 +80,10 @@ test.describe('Session Management', () => {
     }
 
     // Should be redirected to login after logout
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL(/\/login/);
 
     // Try to access dashboard again - should redirect back to login
     await page.goto('/dashboard');
-    await expect(page).toHaveURL('/login');
+    await expect(page).toHaveURL(/\/login/);
   });
 });

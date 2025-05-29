@@ -153,11 +153,14 @@ export default function Dashboard() {
   // Determine what content to display
   const isSearchMode = searchQuery.trim().length > 0;
   const filteredFolders = isSearchMode
-    ? searchResults.filter((result) => result.type === "folder")
-    : folders;
+    ? (searchResults || []).filter((result) => result.type === "folder")
+    : (folders || []);
   const filteredNotes = isSearchMode
-    ? searchResults.filter((result) => result.type === "note")
-    : notes;
+    ? (searchResults || []).filter((result) => result.type === "note")
+    : (notes || []);
+
+  // Defensive check to ensure filteredNotes is always an array
+  const safeFilteredNotes = Array.isArray(filteredNotes) ? filteredNotes : [];
 
   const loadBreadcrumbPath = useCallback(async (folderId: string) => {
     const path: Folder[] = [];
@@ -190,16 +193,19 @@ export default function Dashboard() {
         currentFolderId || "null"
       }&sortBy=${notesSortBy}&sortOrder=${sortOrder}`;
 
-      console.log("Dashboard: Fetching folders with URL:", folderApiUrl);
-      console.log("Dashboard: Fetching notes with URL:", notesApiUrl);
-
       const [foldersResponse, notesResponse] = await Promise.all([
         apiClient(folderApiUrl, { method: "GET" }),
         apiClient(notesApiUrl, { method: "GET" }),
       ]);
 
-      setFolders(foldersResponse as Folder[]);
-      setNotes(notesResponse as Note[]);
+      setFolders((foldersResponse as Folder[]) || []);
+
+      // Handle the case where API returns {notes: Note[]} instead of Note[]
+      const notesArray = Array.isArray(notesResponse)
+        ? (notesResponse as Note[])
+        : ((notesResponse as {notes: Note[]})?.notes || []);
+
+      setNotes(notesArray);
     } catch (err: unknown) {
       const errorMessage =
         (err as { response?: { data?: { error?: string } } })?.response?.data
@@ -437,7 +443,7 @@ export default function Dashboard() {
             onOpenChange={setIsCreateFolderOpen}
           >
             <DialogTrigger asChild>
-              <Button variant="default" className="group">
+              <Button variant="default" className="group" data-testid="new-folder-button">
                 <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200" />
                 New Folder
               </Button>
@@ -448,6 +454,7 @@ export default function Dashboard() {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <Input
+                  name="name"
                   placeholder="Folder name"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
@@ -472,7 +479,7 @@ export default function Dashboard() {
           {/* Create Note Dialog */}
           <Dialog open={isCreateNoteOpen} onOpenChange={setIsCreateNoteOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="group smooth-hover">
+              <Button variant="outline" className="group smooth-hover" data-testid="new-note-button">
                 <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200" />
                 New Note
               </Button>
@@ -483,6 +490,7 @@ export default function Dashboard() {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <Input
+                  name="title"
                   placeholder="Note title"
                   value={newNoteTitle}
                   onChange={(e) => setNewNoteTitle(e.target.value)}
@@ -636,7 +644,7 @@ export default function Dashboard() {
           {isSearchMode && !isSearching && (
             <div className="p-4 bg-primary/10 border border-primary/30 text-primary rounded-lg shadow-md animate-slide-in-bottom">
               <span className="font-semibold">Search Results:</span> Found{" "}
-              {filteredFolders.length + filteredNotes.length} items matching "
+              {filteredFolders.length + safeFilteredNotes.length} items matching "
               {searchQuery}"
             </div>
           )}
@@ -776,10 +784,11 @@ export default function Dashboard() {
               ))}
 
               {/* Notes */}
-              {filteredNotes.map((note, index) => (
+              {safeFilteredNotes.map((note, index) => (
                 <ContextMenu key={note.id}>
                   <ContextMenuTrigger>
                     <Card
+                      data-testid="note-card"
                       className={`card-hover glass-effect group cursor-pointer animate-slide-in-bottom ${
                         viewMode === "list" ? "flex items-center p-4" : ""
                       }`}
@@ -890,7 +899,7 @@ export default function Dashboard() {
 
               {/* Empty State */}
               {filteredFolders.length === 0 &&
-                filteredNotes.length === 0 &&
+                safeFilteredNotes.length === 0 &&
                 !loading &&
                 !isSearching && (
                   <div className="col-span-full text-center py-16 animate-fade-in-scale">

@@ -28,11 +28,11 @@ test.describe('Login Flow', () => {
   test('should allow a registered user to log in successfully and redirect to dashboard', async ({ page }) => {
     await page.goto('/login');
 
-    await expect(page.getByRole('heading', { name: 'Log In' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
 
     await page.getByLabel('Email address').fill(registeredEmail);
     await page.getByLabel('Password').fill(password);
-    await page.getByRole('button', { name: 'Log In' }).click();
+    await page.getByRole('button', { name: 'Sign In' }).click();
 
     // Wait for navigation to the dashboard page
     await page.waitForURL('/dashboard', { timeout: 10000 });
@@ -44,11 +44,11 @@ test.describe('Login Flow', () => {
   test('should show an error message for invalid credentials', async ({ page }) => {
     await page.goto('/login');
 
-    await expect(page.getByRole('heading', { name: 'Log In' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
 
     await page.getByLabel('Email address').fill(registeredEmail); // Correct email
     await page.getByLabel('Password').fill('WrongPassword123!'); // Incorrect password
-    await page.getByRole('button', { name: 'Log In' }).click();
+    await page.getByRole('button', { name: 'Sign In' }).click();
 
     // Expect an error message to be visible
     // The exact text depends on your API's error response and how the frontend displays it.
@@ -58,9 +58,9 @@ test.describe('Login Flow', () => {
 
   test('should show validation errors for empty fields', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: 'Log In' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Log In' }).click(); // Submit with empty fields
+    await page.getByRole('button', { name: 'Sign In' }).click(); // Submit with empty fields
 
     await expect(page.getByText('Invalid email address')).toBeVisible();
     await expect(page.getByText('Password is required')).toBeVisible();
@@ -69,12 +69,18 @@ test.describe('Login Flow', () => {
 
    test('should show validation error for invalid email format', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('heading', { name: 'Log In' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
 
     await page.getByLabel('Email address').fill('invalid-email-format');
     await page.getByLabel('Password').fill(password);
-    await page.getByRole('button', { name: 'Log In' }).click();
 
+    // Focus out of the email field to trigger validation
+    await page.getByLabel('Password').click();
+
+    // Try to submit the form
+    await page.getByRole('button', { name: 'Sign In' }).click();
+
+    // Check for validation error - it might be visible without submission due to client-side validation
     await expect(page.getByText('Invalid email address')).toBeVisible();
     await expect(page).not.toHaveURL('/dashboard'); // Ensure no redirect
   });

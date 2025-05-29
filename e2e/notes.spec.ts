@@ -27,8 +27,50 @@ test.describe('Note Management', () => {
   });
 
   test('should create a new note in root', async ({ page }) => {
+    // Wait for dashboard URL
+    await page.waitForURL('/dashboard');
+
+    // Add console listener to capture any JavaScript errors
+    page.on('console', msg => {
+      if (msg.type() === 'error') {
+        console.log('Browser console error:', msg.text());
+      }
+    });
+
+    // Wait a moment for the page to stabilize
+    await page.waitForTimeout(2000);
+
+    // Debug what's actually on the page
+    await page.screenshot({ path: 'debug-dashboard.png', fullPage: true });
+    console.log('Page title:', await page.title());
+
+    // Check for error indicators
+    const errorElement = page.locator('text=Something went wrong');
+    if (await errorElement.isVisible()) {
+      console.log('ERROR: Dashboard shows error page');
+      const errorMessage = await page.locator('text=Error:').textContent();
+      console.log('Error message:', errorMessage);
+      throw new Error(`Dashboard crashed with error page: ${errorMessage}`);
+    }
+
+    // Try to find buttons with multiple strategies
+    const newNoteByTestId = page.locator('[data-testid="new-note-button"]');
+    const newNoteByText = page.locator('button:has-text("New Note")');
+    const anyButton = page.locator('button');
+
+    console.log('Total buttons on page:', await anyButton.count());
+    console.log('New Note button by testid visible:', await newNoteByTestId.isVisible());
+    console.log('New Note button by text visible:', await newNoteByText.isVisible());
+
+    // Try to wait for any button first
+    await page.waitForSelector('button', { timeout: 10000 });
+    console.log('Found at least one button');
+
+    // Wait for dashboard to load and buttons to be available
+    await page.waitForSelector('[data-testid="new-note-button"]', { state: 'visible', timeout: 10000 });
+
     // Click "Create Note" button
-    await page.click('button:has-text("Create Note")');
+    await page.click('[data-testid="new-note-button"]');
 
     // Modal should be visible
     await expect(page.locator('[role="dialog"]')).toBeVisible();
@@ -38,11 +80,14 @@ test.describe('Note Management', () => {
     const noteTitle = `Test Note ${Date.now()}`;
     await page.fill('input[name="title"]', noteTitle);
 
-    // Submit form
-    await page.click('button[type="submit"]:has-text("Create")');
+    // Submit form - be more specific to avoid sort buttons
+    await page.click('[role="dialog"] button:has-text("Create")');
 
     // Modal should close
     await expect(page.locator('[role="dialog"]')).not.toBeVisible();
+
+    // Wait for the page to refresh with new data
+    await page.waitForTimeout(1000);
 
     // Note should appear in the dashboard
     await expect(page.locator(`text=${noteTitle}`)).toBeVisible();
@@ -53,7 +98,7 @@ test.describe('Note Management', () => {
 
   test('should not create note with empty title', async ({ page }) => {
     // Click "Create Note" button
-    await page.click('button:has-text("Create Note")');
+    await page.click('button:has-text("New Note")');
 
     // Try to submit with empty title
     await page.click('button[type="submit"]:has-text("Create")');
@@ -69,13 +114,13 @@ test.describe('Note Management', () => {
     const noteTitle = `Duplicate Note ${Date.now()}`;
 
     // Create first note
-    await page.click('button:has-text("Create Note")');
+    await page.click('button:has-text("New Note")');
     await page.fill('input[name="title"]', noteTitle);
     await page.click('button[type="submit"]:has-text("Create")');
     await expect(page.locator('[role="dialog"]')).not.toBeVisible();
 
     // Try to create second note with same title
-    await page.click('button:has-text("Create Note")');
+    await page.click('button:has-text("New Note")');
     await page.fill('input[name="title"]', noteTitle);
     await page.click('button[type="submit"]:has-text("Create")');
 
@@ -86,7 +131,7 @@ test.describe('Note Management', () => {
   test('should open note editor when clicking edit button', async ({ page }) => {
     // Create a note first
     const noteTitle = `Editor Test ${Date.now()}`;
-    await page.click('button:has-text("Create Note")');
+    await page.click('button:has-text("New Note")');
     await page.fill('input[name="title"]', noteTitle);
     await page.click('button[type="submit"]:has-text("Create")');
     await expect(page.locator('[role="dialog"]')).not.toBeVisible();
@@ -193,7 +238,7 @@ test.describe('Note Management', () => {
     await page.click(`text=${folderName}`);
 
     // Create a note in this folder
-    await page.click('button:has-text("Create Note")');
+    await page.click('button:has-text("New Note")');
     const noteTitle = `Folder Note ${Date.now()}`;
     await page.fill('input[name="title"]', noteTitle);
     await page.click('button[type="submit"]:has-text("Create")');

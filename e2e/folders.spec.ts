@@ -14,8 +14,8 @@ test.describe('Folder Management', () => {
     await page.fill('input[name="confirmPassword"]', testPassword);
     await page.click('button[type="submit"]');
 
-    // Should redirect to login
-    await expect(page).toHaveURL('/login');
+    // Should redirect to login (possibly with query parameters)
+    await expect(page).toHaveURL(/\/login/);
 
     // Login
     await page.fill('input[name="email"]', testEmail);
@@ -164,7 +164,7 @@ test.describe('Folder Management', () => {
     await page.click(`text=${folderName}`);
 
     // Create a note in this folder
-    await page.click('button:has-text("Create Note")');
+    await page.click('button:has-text("New Note")');
     const noteName = `Test Note ${Date.now()}`;
     await page.fill('input[name="title"]', noteName);
     await page.click('button[type="submit"]:has-text("Create")');

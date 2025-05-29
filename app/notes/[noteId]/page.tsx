@@ -23,7 +23,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
-import { Mermaid } from "@/components/Mermaid";
+// import { Mermaid } from "@/components/Mermaid";
 
 // Dynamic import for CodeMirror to avoid SSR issues
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
@@ -524,9 +524,7 @@ export default function NoteEditor() {
                         }) {
                           const match = /language-(\w+)/.exec(className || "");
                           return match?.[1] === "mermaid" ? (
-                            <Mermaid
-                              code={String(children).replace(/\n$/, "")}
-                            />
+                            <div>Mermaid diagrams temporarily disabled</div>
                           ) : (
                             <code className={className} {...props}>
                               {children}
