@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ printf "%s-%s" .Release.Name .Values.nextjsApp.service.name }}
+  name: {{ include "noteworthy-chart.fullname" . }}
   labels:
-    {{- include "mynotesapp-chart.labels" . | nindent 4 }}
+    {{- include "noteworthy-chart.labels" . | nindent 4 }}
     app.kubernetes.io/component: nextjs-app
 spec:
   type: {{ .Values.nextjsApp.service.type }}
@@ -12,6 +12,9 @@ spec:
       port: {{ .Values.nextjsApp.service.port }}
       targetPort: {{ .Values.nextjsApp.service.port }}
       protocol: TCP
+      {{- if .Values.nextjsApp.service.nodePort }}
+      nodePort: {{ .Values.nextjsApp.service.nodePort }}
+      {{- end }}
   selector:
-    {{- include "mynotesapp-chart.selectorLabels" . | nindent 4 }}
+    {{- include "noteworthy-chart.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: nextjs-app

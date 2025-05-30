@@ -5,13 +5,14 @@ replicaCount: 1
 
 nextjsApp:
   image:
-    repository: ghcr.io/ncls-p/mynotesapp
+    repository: ghcr.io/ncls-p/noteworthy
     pullPolicy: Always
     tag: latest
   service:
-    name: nextjs-app
-    type: ClusterIP
+    name: noteworthy
+    type: NodePort
     port: 3000
+    nodePort: null  # Optional: Specify a NodePort (30000-32767). If null/empty, Kubernetes assigns one.
   resources:
     requests:
       cpu: "100m"
@@ -20,7 +21,7 @@ nextjsApp:
       cpu: "500m"
       memory: "512Mi"
   config:
-    NEXT_PUBLIC_APP_NAME: 'MyNotesApp'
+    NEXT_PUBLIC_APP_NAME: 'Noteworthy'
     LOG_LEVEL: 'info'
     NODE_ENV: 'development'
     PORT: '3000'
@@ -33,7 +34,7 @@ postgres:
     tag: pg16
     pullPolicy: IfNotPresent
   service:
-    name: postgres
+    name: noteworthy-postgres
     port: 5432
   resources:
     requests:
@@ -46,9 +47,9 @@ postgres:
     enabled: true
     size: 1Gi
     storageClassName: ""
-    volumeName: "postgres-data"
+    volumeName: "noteworthy-postgres-data"
   config:
-    POSTGRES_DB: "mynotesappdb"
+    POSTGRES_DB: "noteworthydb"
   dbCredentialsSecretName: "db-credentials"
 
 # WARNING: Default secret values below are for local testing/demonstration ONLY.

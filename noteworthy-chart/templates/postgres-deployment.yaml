@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ printf "%s-%s" .Release.Name .Values.postgres.service.name }}
+  name: {{ include "noteworthy-chart.fullname" . }}-postgres
   labels:
-    {{- include "mynotesapp-chart.labels" . | nindent 4 }}
+    {{- include "noteworthy-chart.labels" . | nindent 4 }}
     app.kubernetes.io/component: postgres
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "mynotesapp-chart.selectorLabels" . | nindent 6 }}
+      {{- include "noteworthy-chart.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: postgres
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        {{- include "mynotesapp-chart.selectorLabels" . | nindent 8 }}
+        {{- include "noteworthy-chart.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: postgres
     spec:
       containers:
@@ -40,7 +40,7 @@ spec:
             - name: POSTGRES_DB
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "mynotesapp-chart.fullname" . }}-db-config
+                  name: {{ include "noteworthy-chart.fullname" . }}-db-config
                   key: POSTGRES_DB
           resources:
             {{- toYaml .Values.postgres.resources | nindent 12 }}

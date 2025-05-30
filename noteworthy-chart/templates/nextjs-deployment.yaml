@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ printf "%s-%s" .Release.Name .Values.nextjsApp.service.name }}
+  name: {{ include "noteworthy-chart.fullname" . }}
   labels:
-    {{- include "mynotesapp-chart.labels" . | nindent 4 }}
+    {{- include "noteworthy-chart.labels" . | nindent 4 }}
     app.kubernetes.io/component: nextjs-app
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "mynotesapp-chart.selectorLabels" . | nindent 6 }}
+      {{- include "noteworthy-chart.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: nextjs-app
   template:
     metadata:
       labels:
-        {{- include "mynotesapp-chart.selectorLabels" . | nindent 8 }}
+        {{- include "noteworthy-chart.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: nextjs-app
     spec:
       containers:
@@ -26,7 +26,7 @@ spec:
               protocol: TCP
           envFrom:
             - configMapRef:
-                name: {{ include "mynotesapp-chart.fullname" . }}-nextjs-app-config
+                name: {{ include "noteworthy-chart.fullname" . }}-config
           env:
             - name: JWT_SECRET
               valueFrom:
@@ -54,19 +54,16 @@ spec:
                   name: {{ .Values.postgres.dbCredentialsSecretName }}
                   key: POSTGRES_PASSWORD
             - name: DB_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: {{ include "mynotesapp-chart.fullname" . }}-db-config
-                  key: DB_HOST
+              value: {{ printf "%s-%s" .Release.Name .Values.postgres.service.name }}
             - name: DB_PORT
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "mynotesapp-chart.fullname" . }}-db-config
+                  name: {{ include "noteworthy-chart.fullname" . }}-db-config
                   key: DB_PORT
             - name: POSTGRES_DB
               valueFrom:
                 configMapKeyRef:
-                  name: {{ include "mynotesapp-chart.fullname" . }}-db-config
+                  name: {{ include "noteworthy-chart.fullname" . }}-db-config
                   key: POSTGRES_DB
             - name: DATABASE_URL
               value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(POSTGRES_DB)?schema=public"

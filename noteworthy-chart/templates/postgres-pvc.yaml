@@ -4,7 +4,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ printf "%s-%s" .Release.Name .Values.postgres.persistence.volumeName }}
   labels:
-    {{- include "mynotesapp-chart.labels" . | nindent 4 }}
+    {{- include "noteworthy-chart.labels" . | nindent 4 }}
     app.kubernetes.io/component: postgres-data
 spec:
   accessModes:

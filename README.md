@@ -26,6 +26,11 @@
     - [Prerequisites](#prerequisites)
     - [Installation \& Setup](#installation--setup)
     - [Running the App](#running-the-app)
+    - [Kubernetes Deployment with Helm](#kubernetes-deployment-with-helm)
+      - [Using the Deploy Script](#using-the-deploy-script)
+      - [Prerequisites for Kubernetes Deployment](#prerequisites-for-kubernetes-deployment)
+      - [Post-Deployment](#post-deployment)
+      - [Manual Helm Deployment](#manual-helm-deployment)
   - [📈 Project Status](#-project-status)
   - [🗺️ Roadmap](#️-roadmap)
   - [📖 API Documentation](#-api-documentation)
@@ -161,6 +166,78 @@ Get your Noteworthy instance up and running with these steps:
 2.  **Access Noteworthy:**
     Once the services are up (you can check with `docker-compose ps`), open your web browser and navigate to:
     `http://localhost:3000` (or the port configured for the `nextjs-app` service if you changed it).
+
+### Kubernetes Deployment with Helm
+
+For production environments or when you prefer Kubernetes deployment, Noteworthy includes a Helm chart and an automated deployment script.
+
+#### Using the Deploy Script
+
+The `deploy.sh` script automates the installation or upgrade of the Noteworthy Helm chart:
+
+1.  **Basic deployment with default settings:**
+    ```bash
+    ./deploy.sh
+    ```
+    This deploys Noteworthy with:
+    - Release name: `noteworthy`
+    - Namespace: `noteworthy`
+    - Default values from [`noteworthy-chart/values.yaml`](noteworthy-chart/values.yaml)
+
+2.  **Custom release name and namespace:**
+    ```bash
+    ./deploy.sh --release-name my-noteworthy --namespace noteworthy-prod
+    ```
+
+3.  **Using a custom values file:**
+    ```bash
+    ./deploy.sh --values ./my-custom-values.yaml
+    ```
+
+4.  **Complete example with all options:**
+    ```bash
+    ./deploy.sh \
+      --release-name noteworthy-staging \
+      --namespace noteworthy-staging \
+      --values ./staging-values.yaml
+    ```
+
+5.  **View help and all available options:**
+    ```bash
+    ./deploy.sh --help
+    ```
+
+#### Prerequisites for Kubernetes Deployment
+
+- [Helm 3.x](https://helm.sh/docs/intro/install/) installed and configured
+- Access to a Kubernetes cluster with `kubectl` configured
+- Sufficient permissions to create namespaces and deploy resources
+- **Important:** Ensure any conflicting old Helm releases (like `mynotesapp-v1` in the `default` namespace) are uninstalled before running the script for the first time in the new namespace: `helm uninstall mynotesapp-v1 -n default`
+
+#### Post-Deployment
+
+After successful deployment, the script will provide commands to check the deployment status:
+
+```bash
+# Check Helm release status
+helm status noteworthy -n noteworthy
+
+# View services (including NodePort if applicable)
+kubectl get svc -n noteworthy -l app.kubernetes.io/instance=noteworthy
+```
+
+**Note:** The script will automatically create the `noteworthy` namespace if it doesn't exist (due to the `--create-namespace` flag in the Helm command).
+
+#### Manual Helm Deployment
+
+If you prefer to use Helm directly without the script:
+
+```bash
+helm upgrade --install noteworthy ./noteworthy-chart \
+  --namespace noteworthy \
+  --create-namespace \
+  --values ./noteworthy-chart/values.yaml
+```
 
 ---
 
