@@ -5,9 +5,8 @@ replicaCount: 1
 
 nextjsApp:
   image:
-    # TODO: Replace with your actual container image repository for production
-    repository: mynotesapp/nextjs-app
-    pullPolicy: IfNotPresent
+    repository: ghcr.io/ncls-p/mynotesapp
+    pullPolicy: Always
     tag: latest
   service:
     name: nextjs-app
