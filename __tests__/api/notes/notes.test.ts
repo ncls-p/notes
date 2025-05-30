@@ -12,6 +12,9 @@ const mockVerifyJWT = serverAuth.verifyJWT as jest.MockedFunction<typeof serverA
 jest.mock('@prisma/client');
 const MockedPrismaClient = PrismaClient as jest.MockedClass<typeof PrismaClient>;
 
+// Mock the db module
+jest.mock('@/lib/db');
+
 describe('/api/notes', () => {
   let mockPrisma: any;
   let consoleSpy: jest.SpyInstance;
@@ -35,6 +38,10 @@ describe('/api/notes', () => {
     };
 
     MockedPrismaClient.mockImplementation(() => mockPrisma);
+
+    // Mock the default export from db module
+    const dbModule = require('@/lib/db');
+    dbModule.default = mockPrisma;
 
     // Mock console.error to avoid noise in tests
     consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -128,11 +135,12 @@ describe('/api/notes', () => {
       const newNote = {
         id: 'note-1',
         title: 'Test Note',
-        content: 'Test content',
+        contentMarkdown: 'Test content',
         folderId: null,
         ownerId: 'user-1',
         createdAt: new Date(),
         updatedAt: new Date(),
+        folder: null,
       };
 
       mockPrisma.note.findFirst.mockResolvedValue(null); // No duplicate
@@ -148,7 +156,15 @@ describe('/api/notes', () => {
       expect(response.status).toBe(201);
 
       const responseData = await response.json();
-      expect(responseData.note).toEqual(newNote);
+      expect(responseData.note).toEqual({
+        id: newNote.id,
+        title: newNote.title,
+        content: newNote.contentMarkdown,
+        folderId: newNote.folderId,
+        folder: newNote.folder,
+        createdAt: newNote.createdAt,
+        updatedAt: newNote.updatedAt,
+      });
     });
 
     it('should return 409 for duplicate note title in same folder', async () => {
@@ -201,20 +217,22 @@ describe('/api/notes', () => {
         {
           id: 'note-1',
           title: 'Note 1',
-          content: 'Content 1',
+          contentMarkdown: 'Content 1',
           folderId: null,
           ownerId: 'user-1',
           createdAt: new Date(),
           updatedAt: new Date(),
+          folder: null,
         },
         {
           id: 'note-2',
           title: 'Note 2',
-          content: 'Content 2',
+          contentMarkdown: 'Content 2',
           folderId: null,
           ownerId: 'user-1',
           createdAt: new Date(),
           updatedAt: new Date(),
+          folder: null,
         },
       ];
 
@@ -225,7 +243,15 @@ describe('/api/notes', () => {
       expect(response.status).toBe(200);
 
       const responseData = await response.json();
-      expect(responseData.notes).toEqual(notes);
+      expect(responseData.notes).toEqual(notes.map(note => ({
+        id: note.id,
+        title: note.title,
+        content: note.contentMarkdown,
+        folderId: note.folderId,
+        folder: note.folder,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      })));
     });
   });
 
@@ -265,11 +291,12 @@ describe('/api/notes', () => {
       const note = {
         id: 'note-1',
         title: 'Test Note',
-        content: 'Test content',
+        contentMarkdown: 'Test content',
         folderId: null,
         ownerId: 'user-1',
         createdAt: new Date(),
         updatedAt: new Date(),
+        folder: null,
       };
 
       mockPrisma.note.findFirst.mockResolvedValue(note);
@@ -279,7 +306,15 @@ describe('/api/notes', () => {
       expect(response.status).toBe(200);
 
       const responseData = await response.json();
-      expect(responseData.note).toEqual(note);
+      expect(responseData.note).toEqual({
+        id: note.id,
+        title: note.title,
+        content: note.contentMarkdown,
+        folderId: note.folderId,
+        folder: note.folder,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      });
     });
   });
 
@@ -329,21 +364,28 @@ describe('/api/notes', () => {
       const existingNote = {
         id: 'note-1',
         title: 'Test Note',
-        content: 'Test content',
+        contentMarkdown: 'Test content',
         folderId: null,
         ownerId: 'user-1',
         createdAt: new Date(),
         updatedAt: new Date(),
+        folder: null,
       };
 
       const updatedNote = {
         ...existingNote,
         title: 'Updated Note',
-        content: 'Updated content',
+        contentMarkdown: 'Updated content',
         updatedAt: new Date(),
       };
 
-      mockPrisma.note.findFirst.mockResolvedValue(existingNote);
+      // Set up mock responses for two findFirst calls:
+      // 1. Check if note exists (return existingNote)
+      // 2. Duplicate check (return null)
+      mockPrisma.note.findFirst
+        .mockResolvedValueOnce(existingNote) // for note existence check
+        .mockResolvedValueOnce(null); // for duplicate check
+
       mockPrisma.note.update.mockResolvedValue(updatedNote);
 
       const request = new NextRequest('http://localhost/api/notes/note-1', {

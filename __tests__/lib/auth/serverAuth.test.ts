@@ -24,6 +24,7 @@ describe('serverAuth', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.JWT_SECRET = 'test-secret-key';
+    process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret';
   });
 
   afterEach(() => {

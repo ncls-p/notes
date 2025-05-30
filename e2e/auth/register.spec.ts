@@ -6,7 +6,7 @@ test.describe('Registration Flow', () => {
   test('should allow a new user to register successfully and redirect to login', async ({ page }) => {
     await page.goto('/register');
 
-    await expect(page.getByRole('heading', { name: 'Create Account' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Join Noteworthy' })).toBeVisible();
 
     const email = uniqueEmail();
     await page.getByLabel('Email address').fill(email);
@@ -25,8 +25,8 @@ test.describe('Registration Flow', () => {
 
     // Wait for navigation to the login page (or a dashboard if auto-login occurs)
     // Adjust the URL as per your application's behavior post-registration.
-    await page.waitForURL('/login', { timeout: 10000 });
-    await expect(page).toHaveURL('/login');
+    await page.waitForURL(/\/login/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/login/);
     // Optionally, check for a success message if one is displayed before redirect
     // await expect(page.getByText('Registration successful!')).toBeVisible();
   });
@@ -44,7 +44,7 @@ test.describe('Registration Flow', () => {
     // and the backend is set up to handle it.
     // In a real scenario, you might need to ensure the DB state or mock this.
     await page.getByRole('button', { name: 'Create Account' }).click();
-    await page.waitForURL('/login'); // Wait for the first registration to complete
+    await page.waitForURL(new RegExp('/login\\?message=registration-success'));
 
     // Now, attempt to register with the same email again
     await page.goto('/register');

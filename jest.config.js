@@ -26,7 +26,7 @@ export default {
       },
       setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
       transformIgnorePatterns: [
-        'node_modules/(?!(react-markdown|remark-gfm|rehype-sanitize|rehype-highlight|.*\\.mjs$))'
+        'node_modules/(?!(react-markdown|remark-gfm|rehype-sanitize|rehype-highlight|devlop|hast-util-.*|mdast-util-.*|micromark.*|unist-.*|vfile.*|comma-separated-tokens|space-separated-tokens|property-information|web-namespaces|estree-util-.*|unified|bail|trough|.*\\.mjs$))'
       ],
     },
     // Configuration for API route tests and server-side logic

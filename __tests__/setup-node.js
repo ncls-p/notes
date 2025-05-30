@@ -209,7 +209,7 @@ jest.mock('jsonwebtoken', () => ({
 
 // Mock next/headers
 jest.mock('next/headers', () => ({
-  cookies: jest.fn(),
+  cookies: jest.fn().mockResolvedValue(new MockCookies()),
   headers: jest.fn(),
 }));
 

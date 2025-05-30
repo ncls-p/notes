@@ -10,21 +10,18 @@ const updateNoteSchema = z.object({
     .min(1, "Note title is required")
     .max(255, "Note title too long")
     .optional(),
-  contentMarkdown: z.string().optional(),
-  folderId: z.string().uuid().optional().nullable(),
+  content: z.string().optional(),
+  folderId: z.string().optional().nullable(),
 });
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ noteId: string }> },
-) {
+export async function GET(request: NextRequest, context: any) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { noteId } = await params;
+    const noteId = context.params.noteId;
 
     const note = await prisma.note.findFirst({
       where: {
@@ -44,39 +41,38 @@ export async function GET(
     if (!note) {
       return NextResponse.json(
         { error: "Note not found or access denied" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
     return NextResponse.json({
-      id: note.id,
-      title: note.title,
-      contentMarkdown: note.contentMarkdown,
-      folderId: note.folderId,
-      folder: note.folder,
-      createdAt: note.createdAt,
-      updatedAt: note.updatedAt,
+      note: {
+        id: note.id,
+        title: note.title,
+        content: note.contentMarkdown,
+        folderId: note.folderId,
+        folder: note.folderId ? { id: note.folderId, name: note.folder?.name } : null,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      },
     });
   } catch (error) {
     console.error("Error fetching note:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ noteId: string }> },
-) {
+export async function PUT(request: NextRequest, context: any) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { noteId } = await params;
+    const noteId = context.params.noteId;
 
     // Verify note exists and belongs to user
     const existingNote = await prisma.note.findFirst({
@@ -89,7 +85,7 @@ export async function PUT(
     if (!existingNote) {
       return NextResponse.json(
         { error: "Note not found or access denied" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -111,7 +107,7 @@ export async function PUT(
       if (!folder) {
         return NextResponse.json(
           { error: "Folder not found or access denied" },
-          { status: 404 },
+          { status: 404 }
         );
       }
     }
@@ -135,14 +131,20 @@ export async function PUT(
       if (duplicateNote) {
         return NextResponse.json(
           { error: "A note with this title already exists in this location" },
-          { status: 409 },
+          { status: 409 }
         );
       }
     }
 
+    // Map content to contentMarkdown for database
+    const updateData: any = {};
+    if (validatedData.title !== undefined) updateData.title = validatedData.title;
+    if (validatedData.content !== undefined) updateData.contentMarkdown = validatedData.content;
+    if (validatedData.folderId !== undefined) updateData.folderId = validatedData.folderId;
+
     const updatedNote = await prisma.note.update({
       where: { id: noteId },
-      data: validatedData,
+      data: updateData,
       include: {
         folder: {
           select: {
@@ -154,41 +156,40 @@ export async function PUT(
     });
 
     return NextResponse.json({
-      id: updatedNote.id,
-      title: updatedNote.title,
-      contentMarkdown: updatedNote.contentMarkdown,
-      folderId: updatedNote.folderId,
-      folder: updatedNote.folder,
-      createdAt: updatedNote.createdAt,
-      updatedAt: updatedNote.updatedAt,
+      note: {
+        id: updatedNote.id,
+        title: updatedNote.title,
+        content: updatedNote.contentMarkdown,
+        folderId: updatedNote.folderId,
+        folder: updatedNote.folder,
+        createdAt: updatedNote.createdAt,
+        updatedAt: updatedNote.updatedAt,
+      },
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid input", details: error.errors },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     console.error("Error updating note:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
+      { error极: "Internal server error" },
+      { status: 500 }
     );
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ noteId: string }> },
-) {
+export async function DELETE(request: NextRequest, context: any) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { noteId } = await params;
+    const noteId = context.params.noteId;
 
     // Verify note exists and belongs to user
     const existingNote = await prisma.note.findFirst({
@@ -201,7 +202,7 @@ export async function DELETE(
     if (!existingNote) {
       return NextResponse.json(
         { error: "Note not found or access denied" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -214,7 +215,7 @@ export async function DELETE(
     console.error("Error deleting note:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

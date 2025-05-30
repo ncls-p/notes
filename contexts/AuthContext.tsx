@@ -31,6 +31,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let isMounted = true;
+
+    // Helper function to decode JWT token safely
+    const decodeJWT = (token: string) => {
+      try {
+        // Check if we're in a browser environment
+        if (typeof window === 'undefined' || typeof atob === 'undefined') {
+          // In Node.js environment (tests), use Buffer for base64 decoding
+          const parts = token.split('.');
+          if (parts.length !== 3) {
+            throw new Error('Invalid JWT format');
+          }
+
+          const base64Url = parts[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+
+          // Use Buffer in Node.js environment
+          const decoded = Buffer.from(base64, 'base64').toString('utf-8');
+          return JSON.parse(decoded);
+        } else {
+          // Browser environment - use atob
+          const base64Url = token.split('.')[1];
+          if (!base64Url) {
+            throw new Error('Invalid JWT format');
+          }
+
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+
+          return JSON.parse(jsonPayload);
+        }
+      } catch (error) {
+        throw new Error(`JWT decode failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    };
+
     const initializeAuth = async () => {
       clientLogger.time('auth_initialization');
       clientLogger.debug('Starting authentication initialization');
@@ -41,13 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           clientLogger.debug('Found existing access token');
           // Decode the JWT token to extract user data
           try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-
-            const decoded = JSON.parse(jsonPayload);
+            const decoded = decodeJWT(token);
 
             if (decoded.userId && decoded.email && isMounted) {
               const userData = {
@@ -66,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               });
             }
           } catch (decodeError) {
+            console.error('Failed to initialize auth:', decodeError);
             clientLogger.logError(decodeError, {
               context: 'token_decode',
               operation: 'auth_initialization'
@@ -79,76 +111,76 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } else {
           clientLogger.debug('No access token found, attempting refresh');
-          // Try to refresh the token using the refresh token cookie
-          try {
-            clientLogger.logRequest('POST', '/api/auth/refresh-token');
-            const refreshStartTime = Date.now();
+          // Only try to refresh in browser environment
+          if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
+            try {
+              clientLogger.logRequest('POST', '/api/auth/refresh-token');
+              const refreshStartTime = Date.now();
 
-            const response = await fetch('/api/auth/refresh-token', {
-              method: 'POST',
-              credentials: 'include', // Include cookies for refresh token
-            });
+              const response = await fetch('/api/auth/refresh-token', {
+                method: 'POST',
+                credentials: 'include', // Include cookies for refresh token
+              });
 
-            const refreshDuration = Date.now() - refreshStartTime;
-            clientLogger.logResponse('POST', '/api/auth/refresh-token', response.status, refreshDuration);
+              const refreshDuration = Date.now() - refreshStartTime;
+              clientLogger.logResponse('POST', '/api/auth/refresh-token', response.status, refreshDuration);
 
-            if (response.ok) {
-              const data = await response.json();
-              if (data.accessToken) {
-                clientLogger.debug('Token refresh successful');
-                // Decode the new token and set user
-                try {
-                  const base64Url = data.accessToken.split('.')[1];
-                  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                  const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                  }).join(''));
+              if (response.ok) {
+                const data = await response.json();
+                if (data.accessToken) {
+                  clientLogger.debug('Token refresh successful');
+                  // Decode the new token and set user
+                  try {
+                    const decoded = decodeJWT(data.accessToken);
 
-                  const decoded = JSON.parse(jsonPayload);
+                    if (decoded.userId && decoded.email && isMounted) {
+                      setAccessToken(data.accessToken); // Store the new token
+                      const userData = {
+                        id: decoded.userId,
+                        email: decoded.email
+                      };
 
-                  if (decoded.userId && decoded.email && isMounted) {
-                    setAccessToken(data.accessToken); // Store the new token
-                    const userData = {
-                      id: decoded.userId,
-                      email: decoded.email
-                    };
+                      setUser(userData);
+                      setIsAuthenticated(true);
+                      clientLogger.setUserId(decoded.userId);
 
-                    setUser(userData);
-                    setIsAuthenticated(true);
-                    clientLogger.setUserId(decoded.userId);
-
-                    clientLogger.logAuthEvent('token_refresh', {
-                      userId: decoded.userId,
-                      email: decoded.email.substring(0, 3) + '***@' + decoded.email.split('@')[1],
-                      duration: refreshDuration
+                      clientLogger.logAuthEvent('token_refresh', {
+                        userId: decoded.userId,
+                        email: decoded.email.substring(0, 3) + '***@' + decoded.email.split('@')[1],
+                        duration: refreshDuration
+                      });
+                    }
+                  } catch (decodeError) {
+                    clientLogger.logError(decodeError, {
+                      context: 'refreshed_token_decode',
+                      operation: 'auth_initialization'
                     });
                   }
-                } catch (decodeError) {
-                  clientLogger.logError(decodeError, {
-                    context: 'refreshed_token_decode',
-                    operation: 'auth_initialization'
-                  });
                 }
+              } else {
+                clientLogger.logAuthEvent('login_failure', {
+                  method: 'token_refresh',
+                  reason: 'refresh_failed',
+                  status: response.status
+                });
               }
-            } else {
+            } catch (refreshError) {
+              clientLogger.logError(refreshError, {
+                context: 'token_refresh',
+                operation: 'auth_initialization'
+              });
               clientLogger.logAuthEvent('login_failure', {
                 method: 'token_refresh',
-                reason: 'refresh_failed',
-                status: response.status
+                reason: 'network_error'
               });
             }
-          } catch (refreshError) {
-            clientLogger.logError(refreshError, {
-              context: 'token_refresh',
-              operation: 'auth_initialization'
-            });
-            clientLogger.logAuthEvent('login_failure', {
-              method: 'token_refresh',
-              reason: 'network_error'
-            });
+          } else {
+            // In test environment, skip refresh attempt
+            clientLogger.debug('Skipping token refresh in non-browser environment');
           }
         }
       } catch (error) {
+        console.error('Failed to initialize auth:', error);
         clientLogger.logError(error, {
           context: 'auth_initialization',
           operation: 'auth_initialization'
@@ -195,28 +227,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       userId: currentUserId
     });
 
-    try {
-      // Call the logout API to clear server-side refresh token
-      clientLogger.logRequest('POST', '/api/auth/logout');
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include', // Include cookies
-      });
+    // Only call logout API in browser environment
+    if (typeof window !== 'undefined' && typeof fetch !== 'undefined') {
+      try {
+        // Call the logout API to clear server-side refresh token
+        clientLogger.logRequest('POST', '/api/auth/logout');
+        const response = await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include', // Include cookies
+        });
 
-      const logoutDuration = Date.now() - logoutStartTime;
-      clientLogger.logResponse('POST', '/api/auth/logout', response.status, logoutDuration);
-    } catch (error) {
-      clientLogger.logError(error, {
-        context: 'logout_api_call',
-        operation: 'logout'
-      });
-      // Continue with client-side logout even if server call fails
+        const logoutDuration = Date.now() - logoutStartTime;
+        clientLogger.logResponse('POST', '/api/auth/logout', response.status, logoutDuration);
+      } catch (error) {
+        clientLogger.logError(error, {
+          context: 'logout_api_call',
+          operation: 'logout'
+        });
+        // Continue with client-side logout even if server call fails
+      }
     }
 
     try {
       clearAuthTokens();
       clientLogger.debug('Auth tokens cleared successfully');
     } catch (error) {
+      console.error('Failed to clear tokens during logout:', error);
       clientLogger.logError(error, {
         context: 'clear_tokens',
         operation: 'logout'
