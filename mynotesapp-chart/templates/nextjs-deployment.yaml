@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-%s" .Release.Name .Values.nextjsApp.service.name }}
+  labels:
+    {{- include "mynotesapp-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: nextjs-app
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "mynotesapp-chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: nextjs-app
+  template:
+    metadata:
+      labels:
+        {{- include "mynotesapp-chart.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: nextjs-app
+    spec:
+      containers:
+        - name: nextjs-app
+          image: "{{ .Values.nextjsApp.image.repository }}:{{ .Values.nextjsApp.image.tag }}"
+          imagePullPolicy: {{ .Values.nextjsApp.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.nextjsApp.service.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "mynotesapp-chart.fullname" . }}-nextjs-app-config
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.nextjsApp.secretsName }}
+                  key: JWT_SECRET
+            - name: REFRESH_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.nextjsApp.secretsName }}
+                  key: REFRESH_TOKEN_SECRET
+            - name: APP_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.nextjsApp.secretsName }}
+                  key: APP_ENCRYPTION_KEY
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.dbCredentialsSecretName }}
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgres.dbCredentialsSecretName }}
+                  key: POSTGRES_PASSWORD
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mynotesapp-chart.fullname" . }}-db-config
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mynotesapp-chart.fullname" . }}-db-config
+                  key: DB_PORT
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mynotesapp-chart.fullname" . }}-db-config
+                  key: POSTGRES_DB
+            - name: DATABASE_URL
+              value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(POSTGRES_DB)?schema=public"
+          resources:
+            {{- toYaml .Values.nextjsApp.resources | nindent 12 }}
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -f
+                - http://localhost:{{ .Values.nextjsApp.service.port }}/api/health
+            failureThreshold: 3
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+      restartPolicy: Always

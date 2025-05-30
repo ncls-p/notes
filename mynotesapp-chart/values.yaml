@@ -1,0 +1,66 @@
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 1
+
+nextjsApp:
+  image:
+    # TODO: Replace with your actual container image repository for production
+    repository: mynotesapp/nextjs-app
+    pullPolicy: IfNotPresent
+    tag: latest
+  service:
+    name: nextjs-app
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  config:
+    NEXT_PUBLIC_APP_NAME: 'MyNotesApp'
+    LOG_LEVEL: 'info'
+    NODE_ENV: 'development'
+    PORT: '3000'
+    HOSTNAME: 'localhost'
+  secretsName: "nextjs-app-secrets"
+
+postgres:
+  image:
+    repository: pgvector/pgvector
+    tag: pg16
+    pullPolicy: IfNotPresent
+  service:
+    name: postgres
+    port: 5432
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+  persistence:
+    enabled: true
+    size: 1Gi
+    storageClassName: ""
+    volumeName: "postgres-data"
+  config:
+    POSTGRES_DB: "mynotesappdb"
+  dbCredentialsSecretName: "db-credentials"
+
+# WARNING: Default secret values below are for local testing/demonstration ONLY.
+# ALWAYS replace these with strong, unique, and properly generated secrets for any real deployment.
+# Refer to Helm chart documentation for secure secret management practices.
+# Data for secrets (user fills these, templates will b64encode)
+secretData:
+  dbCredentials:
+    POSTGRES_USER: "notesuser"
+    POSTGRES_PASSWORD: "notespassword_changeme"
+  nextjsAppSecrets:
+    JWT_SECRET: "jwt_secret_placeholder_please_change_this_value_minimum_32_characters"
+    REFRESH_TOKEN_SECRET: "refresh_token_secret_placeholder_please_change_this_value_minimum_32_characters"
+    APP_ENCRYPTION_KEY: "app_encryption_key_placeholder_please_change_this_value_minimum_32_characters"

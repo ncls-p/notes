@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mynotesapp-chart.fullname" . }}-db-config
+  labels:
+    {{- include "mynotesapp-chart.labels" . | nindent 4 }}
+data:
+  POSTGRES_DB: {{ .Values.postgres.config.POSTGRES_DB | quote }}
+  DB_HOST: {{ printf "%s-%s" .Release.Name .Values.postgres.service.name }}
+  DB_PORT: {{ .Values.postgres.service.port | quote }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mynotesapp-chart.fullname" . }}-nextjs-app-config
+  labels:
+    {{- include "mynotesapp-chart.labels" . | nindent 4 }}
+data:
+  NEXT_PUBLIC_APP_NAME: {{ .Values.nextjsApp.config.NEXT_PUBLIC_APP_NAME | quote }}
+  LOG_LEVEL: {{ .Values.nextjsApp.config.LOG_LEVEL | quote }}
+  NODE_ENV: {{ .Values.nextjsApp.config.NODE_ENV | quote }}
+  PORT: {{ .Values.nextjsApp.config.PORT | quote }}
+  HOSTNAME: {{ .Values.nextjsApp.config.HOSTNAME | quote }}
