@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import apiClient from "@/lib/apiClient";
 import { cn } from "@/lib/utils";
 import { Bot, Loader2, MessageSquare, Send, User, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -75,10 +76,20 @@ export function AIChat({
     setLoading(true);
 
     try {
-      const response = await fetch("/api/ai/chat", {
+      const data = await apiClient<{
+        response: string;
+        usage?: {
+          inputTokens?: number;
+          outputTokens?: number;
+        };
+        contextChunks: number;
+        sources: Array<{
+          noteId: string;
+          chunkText: string;
+        }>;
+      }>("/api/ai/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: {
           message: userMessage.content,
           configId,
           noteIds,
@@ -88,15 +99,8 @@ export function AIChat({
           })),
           includeContext: true,
           maxContextChunks: 5,
-        }),
+        },
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to get AI response");
-      }
-
-      const data = await response.json();
 
       const assistantMessage: ChatMessage = {
         role: "assistant",
@@ -111,10 +115,25 @@ export function AIChat({
         toast.success(`Found context from ${data.contextChunks} note sections`);
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to send message",
-      );
       console.error("Chat error:", error);
+
+      // Extract more detailed error information
+      let errorMessage = "Failed to send message";
+      if (error instanceof Error) {
+        const apiError = error as Error & { data?: any; status?: number };
+        if (apiError.data?.error) {
+          errorMessage = apiError.data.error;
+        } else if (apiError.data?.details) {
+          errorMessage = `Validation error: ${JSON.stringify(
+            apiError.data.details,
+          )}`;
+        } else {
+          errorMessage = error.message;
+        }
+        console.error("Detailed error data:", apiError.data);
+      }
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

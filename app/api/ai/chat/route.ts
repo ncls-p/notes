@@ -1,20 +1,17 @@
+import {
+  AIConfig,
+  getUserAIConfig,
+  getUserDefaultAIConfig,
+} from "@/lib/ai/config";
+import { searchSimilarChunks } from "@/lib/ai/rag";
+import { getAuthenticatedUser } from "@/lib/auth/serverAuth";
+import { decrypt } from "@/lib/crypto";
+import prisma from "@/lib/db";
+import { logger } from "@/lib/logger";
+import { Ollama } from "@langchain/ollama";
+import { ChatOpenAI } from "@langchain/openai";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { searchSimilarChunks } from "@/lib/ai/rag";
-import {
-  getUserDefaultAIConfig,
-  getUserAIConfig,
-  AIConfig,
-} from "@/lib/ai/config";
-import { logger } from "@/lib/logger";
-import prisma from "@/lib/db";
-import { ChatOpenAI } from "@langchain/openai";
-import { OllamaEmbeddings } from "@langchain/ollama";
-import { Ollama } from "@langchain/ollama";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
-import { HumanMessage, AIMessage, BaseMessage } from "@langchain/core/messages";
-import axios from "axios";
 
 // Validation schema for chat request
 const ChatRequestSchema = z.object({
@@ -45,9 +42,33 @@ export async function POST(request: NextRequest) {
     const validatedData = ChatRequestSchema.parse(body);
 
     // Get AI config for chat
-    const aiConfig = validatedData.configId
+    let aiConfig = validatedData.configId
       ? await getUserAIConfig(user.id, validatedData.configId)
       : await getUserDefaultAIConfig(user.id, "chat");
+
+    // If no default config found, try to get any available config
+    if (!aiConfig) {
+      const allConfigs = await prisma.userAiConfig.findMany({
+        where: { userId: user.id },
+        take: 1,
+      });
+
+      if (allConfigs.length > 0) {
+        const config = allConfigs[0];
+        const apiKey = await decrypt(Buffer.from(config.encryptedApiKey!));
+        aiConfig = {
+          id: config.id,
+          name: config.name,
+          apiProviderType: config.apiProviderType as any,
+          baseUrl: config.baseUrl,
+          apiKey,
+          modelsConfig: config.modelsConfig,
+          isDefaultChat: config.isDefaultChat,
+          isDefaultEmbedding: config.isDefaultEmbedding,
+          isDefaultTranscription: config.isDefaultTranscription,
+        };
+      }
+    }
 
     if (!aiConfig || !aiConfig.apiKey) {
       return NextResponse.json(
@@ -96,7 +117,9 @@ export async function POST(request: NextRequest) {
           retrievedContext = contextChunks
             .map((chunk, index) => {
               const noteTitle = noteMap.get(chunk.noteId) || "Unknown Note";
-              return `[Context ${index + 1} from "${noteTitle}"]\n${chunk.chunkText}`;
+              return `[Context ${index + 1} from "${noteTitle}"]\n${
+                chunk.chunkText
+              }`;
             })
             .join("\n\n");
         }
@@ -194,7 +217,11 @@ ${context}
           .join("\n") + "\n---\n"
       : "";
 
-  const systemPrompt = `You are a helpful AI assistant that helps users understand and work with their personal notes. ${context ? "Use the provided context from their notes to give more relevant and specific answers." : "Answer their questions to the best of your ability."}
+  const systemPrompt = `You are a helpful AI assistant that helps users understand and work with their personal notes. ${
+    context
+      ? "Use the provided context from their notes to give more relevant and specific answers."
+      : "Answer their questions to the best of your ability."
+  }
 
 Guidelines:
 - Be helpful, accurate, and concise
@@ -296,7 +323,7 @@ async function generateAzureOpenAIResponse(
     openAIApiKey: config.apiKey!,
     configuration: {
       baseURL: config.baseUrl,
-      defaultQuery: { 'api-version': '2023-12-01-preview' }
+      defaultQuery: { "api-version": "2023-12-01-preview" },
     },
     modelName: config.modelsConfig?.chatDeployment || "gpt-35-turbo",
     temperature: 0.7,

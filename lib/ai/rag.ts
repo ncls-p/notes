@@ -49,9 +49,34 @@ export async function generateEmbeddings(
   }
 
   // Get AI config
-  const aiConfig = configId
+  let aiConfig = configId
     ? await getUserAIConfig(userId, configId)
     : await getUserDefaultAIConfig(userId, "embedding");
+
+  // If no default embedding config found, try to get any available config
+  if (!aiConfig) {
+    const { decrypt } = await import("../crypto");
+    const allConfigs = await prisma.userAiConfig.findMany({
+      where: { userId },
+      take: 1,
+    });
+
+    if (allConfigs.length > 0) {
+      const config = allConfigs[0];
+      const apiKey = await decrypt(Buffer.from(config.encryptedApiKey!));
+      aiConfig = {
+        id: config.id,
+        name: config.name,
+        apiProviderType: config.apiProviderType as any,
+        baseUrl: config.baseUrl,
+        apiKey,
+        modelsConfig: config.modelsConfig,
+        isDefaultChat: config.isDefaultChat,
+        isDefaultEmbedding: config.isDefaultEmbedding,
+        isDefaultTranscription: config.isDefaultTranscription,
+      };
+    }
+  }
 
   if (!aiConfig || !aiConfig.apiKey) {
     throw new Error("No embedding configuration found or API key missing");
@@ -247,21 +272,20 @@ export async function searchSimilarChunks(
       paramIndex++;
     }
 
-    params.push(queryVector.join(","));
     params.push(limit);
 
+    const queryVectorString = `[${queryVector.join(",")}]`;
     const query_sql = `
       SELECT
         nc.id,
         nc.note_id,
         nc.chunk_text,
-        nc.embedding,
         nc.created_at,
-        (nc.embedding <=> '[${queryVector.join(",")}]') as distance
+        (nc.embedding <=> '${queryVectorString}'::vector) as distance
       FROM note_chunks nc
       WHERE ${whereClause}
-      ORDER BY nc.embedding <=> $${paramIndex}
-      LIMIT $${paramIndex + 1}
+      ORDER BY nc.embedding <=> '${queryVectorString}'::vector
+      LIMIT $${paramIndex}
     `;
 
     const result = await prisma.$queryRawUnsafe<any[]>(query_sql, ...params);
@@ -275,7 +299,7 @@ export async function searchSimilarChunks(
         id: row.id,
         noteId: row.note_id,
         chunkText: row.chunk_text,
-        embedding: JSON.parse(row.embedding),
+        embedding: [], // We don't need the embedding in the result
         createdAt: row.created_at,
       }));
 
