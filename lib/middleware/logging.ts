@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
 import { createRequestLogger, logError } from "@/lib/logger";
+import { NextRequest, NextResponse } from "next/server";
 
 // Generate a unique request ID compatible with Edge Runtime
 const generateRequestId = (): string => {

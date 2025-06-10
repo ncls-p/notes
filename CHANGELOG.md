@@ -8,15 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.2-alpha.1] - 2025-05-25
 
 ### Added
+
 - **Dashboard Context Menus:**
   - Implemented context menus (right-click) for folder and note cards in the [`/dashboard`](app/dashboard/page.tsx:1) for quicker access to actions (Open, Rename, Edit/View, Delete).
   - Imported and utilized `ContextMenu` components from Shadcn UI ([`components/ui/context-menu.tsx`](components/ui/context-menu.tsx:1)).
 
 ### Changed
+
 - **Dashboard UI:**
   - Removed inline action buttons (Edit, Delete) from folder and note cards on the [`/dashboard`](app/dashboard/page.tsx:1) as functionality is now available via context menus.
 
 ### Fixed
+
 - **Dashboard React Key Warning:**
   - Corrected React "missing key prop" warning by moving the `key` prop to the outermost `ContextMenu` component in folder and note list rendering on [`/dashboard`](app/dashboard/page.tsx:378).
 - **API Folder Retrieval:**
@@ -25,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.1-alpha.1] - 2025-05-25
 
 ### Added
+
 - **Dashboard UI/UX Overhaul & Theming:**
   - Redesigned the [`/dashboard`](app/dashboard/page.tsx:1) to align with the main page's aesthetic, featuring a dark theme with gradient backgrounds and accent colors.
   - Implemented light and dark mode support across the dashboard and its components (header, cards, dialogs, buttons, text).
@@ -33,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated global styles ([`app/globals.css`](app/globals.css:1)) and Tailwind configuration ([`tailwind.config.ts`](tailwind.config.ts:1)) to support the new theming structure.
 
 ### Changed
+
 - **Note Editor Enhancements ([`app/notes/[noteId]/page.tsx`](app/notes/[noteId]/page.tsx:1)):**
   - Default view is now "Preview" only.
   - Added view mode controls to switch between "Preview", "Edit" (editor only), and "Split" (side-by-side editor and preview).
@@ -42,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented full breadcrumb navigation for nested folders, allowing users to easily navigate back through the folder hierarchy.
 
 ### Fixed
+
 - Resolved a React hydration error caused by client-side theme class modifications on the `<html>` tag by adding `suppressHydrationWarning` to [`app/layout.tsx`](app/layout.tsx:28).
 - Corrected an issue where light and dark themes appeared identical on the dashboard by applying theme-aware styling to the main dashboard container and its child elements in [`app/dashboard/page.tsx`](app/dashboard/page.tsx:183).
 - Fixed dark and light mode inconsistencies on the note editor page ([`app/notes/[noteId]/page.tsx`](app/notes/[noteId]/page.tsx:1)) by updating page container, header, loading states, and text elements to use theme-aware Tailwind CSS classes (e.g., `bg-background`, `text-foreground`, `bg-card`).
@@ -49,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0-alpha.1] - 2025-05-25
 
 ### Added
+
 - **Comprehensive Test Suite Implementation (Completes MVP Testing Requirements):**
   - **Unit Tests for Notes API (Implements `Task-NT-002.13`):**
     - Created comprehensive unit tests for [`/api/notes`](app/api/notes/route.ts:8) covering POST and GET operations.
@@ -72,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Includes tests for complex nested content and edge cases.
 
 ### Technical Improvements
+
 - **Enhanced Jest Configuration:**
   - Updated [`jest.config.js`](jest.config.js:1) to include component tests in the DOM test environment.
   - Added transform ignore patterns for ES module dependencies (react-markdown, remark-gfm, etc.).
@@ -82,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Component tests ensure Markdown rendering works correctly with all supported elements.
 
 ### Notes
+
 - All major MVP testing requirements have been implemented according to the project backlog.
 - Tests are designed to be maintainable and provide good coverage of both happy path and error scenarios.
 - E2E tests may require the application to be running locally (`npm run dev`) for execution.
@@ -90,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.1-alpha.1] - 2025-05-24
 
 ### Added
+
 - **Enhanced Folder Management (Completes `Task-NT-001.8`):**
   - Implemented folder rename functionality with modal dialog in [`/dashboard`](app/dashboard/page.tsx:152).
   - Added edit button to folder cards with rename dialog and validation.
@@ -107,17 +117,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced CSS styling for prose content with proper typography and spacing.
 
 ### Fixed
+
 - **Environment Configuration Issue:**
   - Resolved login 500 error by adding missing `REFRESH_TOKEN_SECRET` environment variable to [`.env`](.env:10).
   - Fixed "Internal server configuration error" in [`/api/auth/login`](app/api/auth/login/route.ts:36) endpoint.
 
 ### Technical Improvements
+
 - Added comprehensive CSS styling for Markdown preview with proper typography, code highlighting, and table formatting.
 - Enhanced error handling and loading states in note editor.
 - Implemented proper TypeScript types for CodeMirror and Markdown components.
 - Added responsive design for note editor with mobile-friendly interface.
 
 ### Dependencies
+
 - Added `@uiw/react-codemirror` for advanced code editing capabilities.
 - Added `@codemirror/lang-markdown` for Markdown syntax highlighting in editor.
 - Added `react-markdown` ecosystem (`remark-gfm`, `rehype-sanitize`, `rehype-highlight`) for enhanced Markdown rendering.
@@ -125,6 +138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0-alpha.1] - 2025-05-23
 
 ### Added
+
 - **Core Infrastructure & Project Setup (Implements `MVP-EPIC-01` / `US-SETUP-001`):**
   - Initialized Git repository and Next.js project (App Router, TypeScript, Tailwind CSS). (`Task-SETUP-001.1`, `Task-SETUP-001.2`)
   - Created `Dockerfile` and `docker-compose.yml` for Next.js app and PostgreSQL (with pgvector). (`Task-SETUP-001.3`, `Task-SETUP-001.4`)
@@ -167,6 +181,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced test infrastructure with improved mocking for authentication flows.
 
 ### Fixed
+
 - Resolved Next.js build conflict between Turbopack/Babel and `next/font` when a custom `babel.config.js` is present. This involved:
   - Removing the `--turbopack` flag from the `dev` script in `package.json`.
   - Creating `babel.jest.config.js` for Jest's Babel transformations.
@@ -177,6 +192,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updating `app/globals.css` with the necessary Shadcn UI CSS variables for theming and removing problematic base styles.
 
 ### Changed
+
 - Replaced the previously empty `app/page.tsx` with a new, modern, and responsive landing page.
   - The new landing page utilizes Shadcn UI components (`Card`, `Button`, etc.) and features improved styling with a gradient background, enhanced typography, and icons.
   - Content for the landing page is inspired by `README.md`.
@@ -184,6 +200,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0-alpha.1] - 2025-05-24
 
 ### Added
+
 - **Core Note-Taking & Organization (Implements `MVP-EPIC-03`):**
   - **Folder Management API (Implements `US-NT-001`):**
     - [`/api/folders`](app/api/folders/route.ts:8) POST route for creating folders with validation and duplicate checking. (Implements `Task-NT-001.2`)
@@ -212,6 +229,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Note-to-folder associations with optional folder placement (root level notes).
 
 ### Technical Improvements
+
 - All API routes include comprehensive input validation using Zod schemas.
 - Proper error handling with descriptive messages and appropriate HTTP status codes.
 - Authorization checks on all protected endpoints using JWT verification.
@@ -220,6 +238,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integration with existing authentication system and protected route middleware.
 
 ### Notes
+
 - Note editing functionality (CodeMirror 6 integration) is planned for the next iteration.
 - Advanced features like real-time collaboration, version history, and AI integration are scheduled for post-MVP.
 - Current folder navigation is basic; full breadcrumb support for nested folders will be enhanced in future versions.

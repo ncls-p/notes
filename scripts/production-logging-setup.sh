@@ -44,14 +44,14 @@ fi
 
 # Validate log level
 case $LOG_LEVEL in
-    fatal|error|warn|info|debug|trace)
-        echo "✅ LOG_LEVEL '$LOG_LEVEL' is valid"
-        ;;
-    *)
-        echo "❌ Error: Invalid LOG_LEVEL '$LOG_LEVEL'"
-        echo "   Valid values: fatal, error, warn, info, debug, trace"
-        exit 1
-        ;;
+fatal | error | warn | info | debug | trace)
+    echo "✅ LOG_LEVEL '$LOG_LEVEL' is valid"
+    ;;
+*)
+    echo "❌ Error: Invalid LOG_LEVEL '$LOG_LEVEL'"
+    echo "   Valid values: fatal, error, warn, info, debug, trace"
+    exit 1
+    ;;
 esac
 
 # Create logs directory if it doesn't exist
@@ -67,7 +67,7 @@ echo "🔒 Set permissions for log directory"
 
 # Create log rotation configuration for logrotate (if available)
 if command -v logrotate >/dev/null 2>&1; then
-    cat > /tmp/notes-app-logrotate << EOF
+    cat >/tmp/notes-app-logrotate <<EOF
 $LOG_DIR/*.log {
     daily
     missingok
@@ -103,7 +103,7 @@ else
 fi
 
 # Generate production logging configuration summary
-cat > "$LOG_DIR/logging-config.txt" << EOF
+cat >"$LOG_DIR/logging-config.txt" <<EOF
 Production Logging Configuration Summary
 ========================================
 Generated: $(date)
@@ -142,7 +142,7 @@ EOF
 echo "📊 Generated logging configuration summary: $LOG_DIR/logging-config.txt"
 
 # Create health check script
-cat > "$LOG_DIR/health-check.sh" << 'EOF'
+cat >"$LOG_DIR/health-check.sh" <<'EOF'
 #!/bin/bash
 # Health check script for monitoring
 

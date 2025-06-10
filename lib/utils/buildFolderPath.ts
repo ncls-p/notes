@@ -8,7 +8,7 @@
  */
 export const buildFolderPath = (
   folderMap: Map<string, { name: string; parentId: string | null }>,
-  folderId: string | null
+  folderId: string | null,
 ): string => {
   if (!folderId) return "Root";
 

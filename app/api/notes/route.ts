@@ -247,17 +247,20 @@ export async function POST(request: NextRequest) {
       contentLength: note.contentMarkdown?.length || 0,
     });
 
-    return NextResponse.json({
-      note: {
-        id: note.id,
-        title: note.title,
-        content: note.contentMarkdown,
-        folderId: note.folderId,
-        folder: note.folder,
-        createdAt: note.createdAt,
-        updatedAt: note.updatedAt,
+    return NextResponse.json(
+      {
+        note: {
+          id: note.id,
+          title: note.title,
+          content: note.contentMarkdown,
+          folderId: note.folderId,
+          folder: note.folder,
+          createdAt: note.createdAt,
+          updatedAt: note.updatedAt,
+        },
       },
-    }, { status: 201 });
+      { status: 201 },
+    );
   } catch (error) {
     logError(logger, error, {
       requestId,

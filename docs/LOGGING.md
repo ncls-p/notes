@@ -38,23 +38,23 @@ The main logger is configured in [`lib/logger.ts`](../lib/logger.ts) with:
 ### Usage Examples
 
 ```typescript
-import { authLogger, logError, logPerformance } from '@/lib/logger';
+import { authLogger, logError, logPerformance } from "@/lib/logger";
 
 // Basic logging
-authLogger.info('User login attempt', { email: 'user@example.com' });
+authLogger.info("User login attempt", { email: "user@example.com" });
 
 // Error logging with context
-logError(authLogger, error, { userId: '123', operation: 'login' });
+logError(authLogger, error, { userId: "123", operation: "login" });
 
 // Performance logging
 const startTime = Date.now();
 // ... operation ...
-logPerformance(authLogger, 'login', startTime, { userId: '123' });
+logPerformance(authLogger, "login", startTime, { userId: "123" });
 
 // Security events
-logSecurityEvent('auth_failure', {
-  userId: '123',
-  reason: 'invalid_password'
+logSecurityEvent("auth_failure", {
+  userId: "123",
+  reason: "invalid_password",
 });
 ```
 
@@ -72,23 +72,23 @@ Client-side logging is handled by [`lib/clientLogger.ts`](../lib/clientLogger.ts
 ### Usage Examples
 
 ```typescript
-import { clientLogger } from '@/lib/clientLogger';
+import { clientLogger } from "@/lib/clientLogger";
 
 // Basic logging
-clientLogger.info('Component mounted', { component: 'Dashboard' });
+clientLogger.info("Component mounted", { component: "Dashboard" });
 
 // Authentication events
-clientLogger.logAuthEvent('login_success', { method: 'email' });
+clientLogger.logAuthEvent("login_success", { method: "email" });
 
 // Business events
-clientLogger.logBusinessEvent('note_created', { noteId: '123' });
+clientLogger.logBusinessEvent("note_created", { noteId: "123" });
 
 // Network requests
-clientLogger.logRequest('POST', '/api/notes');
-clientLogger.logResponse('POST', '/api/notes', 201, 150);
+clientLogger.logRequest("POST", "/api/notes");
+clientLogger.logResponse("POST", "/api/notes", 201, 150);
 
 // Error logging
-clientLogger.logError(error, { component: 'NoteEditor' });
+clientLogger.logError(error, { component: "NoteEditor" });
 ```
 
 ## Environment Configuration
@@ -108,6 +108,7 @@ NODE_ENV=production
 ### API Routes
 
 All API routes include:
+
 - Request/response logging with timing
 - Database operation logging
 - Error logging with context
@@ -119,6 +120,7 @@ Example implementation in [`app/api/auth/login/route.ts`](../app/api/auth/login/
 ### Middleware
 
 The authentication middleware includes:
+
 - Request processing logging
 - Authentication success/failure events
 - Security event logging
@@ -129,6 +131,7 @@ See [`middleware.ts`](../middleware.ts) for implementation.
 ### React Components
 
 Client components use the client logger for:
+
 - Component lifecycle events
 - User interaction tracking
 - API request/response logging
@@ -167,6 +170,7 @@ Example in [`contexts/AuthContext.tsx`](../contexts/AuthContext.tsx).
 ### Data Redaction
 
 Sensitive information is automatically redacted:
+
 - Passwords and password hashes
 - JWT tokens (access and refresh)
 - Authorization headers
@@ -195,6 +199,7 @@ Sensitive information is automatically redacted:
 ### Monitoring and Alerting
 
 Set up alerts for:
+
 - Error rate spikes
 - Authentication failures
 - Performance degradation
@@ -203,6 +208,7 @@ Set up alerts for:
 ### Log Aggregation
 
 For production deployments, consider integrating with:
+
 - **DataDog**: APM and log management
 - **New Relic**: Application monitoring
 - **ELK Stack**: Elasticsearch, Logstash, Kibana
@@ -211,6 +217,7 @@ For production deployments, consider integrating with:
 ## Testing
 
 Logging is integrated into the test suite:
+
 - Unit tests verify log output
 - Integration tests check log correlation
 - Security tests validate data redaction

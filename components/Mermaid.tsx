@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from 'react';
-import mermaid from 'mermaid';
+import React, { useEffect, useRef } from "react";
+import mermaid from "mermaid";
 
 mermaid.initialize({
   startOnLoad: true,
-  theme: 'default',
-  securityLevel: 'loose',
+  theme: "default",
+  securityLevel: "loose",
 });
 
 interface MermaidProps {
@@ -20,7 +20,7 @@ export const Mermaid: React.FC<MermaidProps> = ({ code }) => {
         containerRef.current.innerHTML = code;
         mermaid.run({ nodes: [containerRef.current] });
       } catch (error) {
-        console.error('Error rendering Mermaid diagram:', error);
+        console.error("Error rendering Mermaid diagram:", error);
       }
     }
   }, [code]);

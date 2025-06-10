@@ -1,21 +1,29 @@
-import { NextRequest } from 'next/server';
-import { POST, GET } from '@/app/api/notes/route';
-import { GET as getNoteById, PUT, DELETE } from '@/app/api/notes/[noteId]/route';
-import * as serverAuth from '@/lib/auth/serverAuth';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest } from "next/server";
+import { POST, GET } from "@/app/api/notes/route";
+import {
+  GET as getNoteById,
+  PUT,
+  DELETE,
+} from "@/app/api/notes/[noteId]/route";
+import * as serverAuth from "@/lib/auth/serverAuth";
+import { PrismaClient } from "@prisma/client";
 
 // Mock serverAuth
-jest.mock('@/lib/auth/serverAuth');
-const mockVerifyJWT = serverAuth.verifyJWT as jest.MockedFunction<typeof serverAuth.verifyJWT>;
+jest.mock("@/lib/auth/serverAuth");
+const mockVerifyJWT = serverAuth.verifyJWT as jest.MockedFunction<
+  typeof serverAuth.verifyJWT
+>;
 
 // Mock PrismaClient
-jest.mock('@prisma/client');
-const MockedPrismaClient = PrismaClient as jest.MockedClass<typeof PrismaClient>;
+jest.mock("@prisma/client");
+const MockedPrismaClient = PrismaClient as jest.MockedClass<
+  typeof PrismaClient
+>;
 
 // Mock the db module
-jest.mock('@/lib/db');
+jest.mock("@/lib/db");
 
-describe('/api/notes', () => {
+describe("/api/notes", () => {
   let mockPrisma: any;
   let consoleSpy: jest.SpyInstance;
 
@@ -40,84 +48,84 @@ describe('/api/notes', () => {
     MockedPrismaClient.mockImplementation(() => mockPrisma);
 
     // Mock the default export from db module
-    const dbModule = require('@/lib/db');
+    const dbModule = require("@/lib/db");
     dbModule.default = mockPrisma;
 
     // Mock console.error to avoid noise in tests
-    consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
     consoleSpy.mockRestore();
   });
 
-  describe('POST /api/notes', () => {
-    it('should return 401 when unauthorized', async () => {
+  describe("POST /api/notes", () => {
+    it("should return 401 when unauthorized", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: false,
-        error: 'Invalid token',
+        error: "Invalid token",
       });
 
-      const request = new NextRequest('http://localhost/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'Test Note', content: 'Test content' }),
+      const request = new NextRequest("http://localhost/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Test Note", content: "Test content" }),
       });
 
       const response = await POST(request);
       expect(response.status).toBe(401);
     });
 
-    it('should return 400 for invalid input - missing title', async () => {
+    it("should return 400 for invalid input - missing title", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
-      const request = new NextRequest('http://localhost/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: 'Test content' }), // Missing title
+      const request = new NextRequest("http://localhost/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: "Test content" }), // Missing title
       });
 
       const response = await POST(request);
       expect(response.status).toBe(400);
     });
 
-    it('should return 400 for empty title', async () => {
+    it("should return 400 for empty title", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
-      const request = new NextRequest('http://localhost/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: '', content: 'Test content' }),
+      const request = new NextRequest("http://localhost/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "", content: "Test content" }),
       });
 
       const response = await POST(request);
       expect(response.status).toBe(400);
     });
 
-    it('should return 404 when folder does not exist', async () => {
+    it("should return 404 when folder does not exist", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
       mockPrisma.folder.findFirst.mockResolvedValue(null);
 
-      const request = new NextRequest('http://localhost/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const request = new NextRequest("http://localhost/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: 'Test Note',
-          content: 'Test content',
-          folderId: 'non-existent-folder'
+          title: "Test Note",
+          content: "Test content",
+          folderId: "non-existent-folder",
         }),
       });
 
@@ -125,19 +133,19 @@ describe('/api/notes', () => {
       expect(response.status).toBe(404);
     });
 
-    it('should create note successfully without folder', async () => {
+    it("should create note successfully without folder", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
       const newNote = {
-        id: 'note-1',
-        title: 'Test Note',
-        contentMarkdown: 'Test content',
+        id: "note-1",
+        title: "Test Note",
+        contentMarkdown: "Test content",
         folderId: null,
-        ownerId: 'user-1',
+        ownerId: "user-1",
         createdAt: new Date(),
         updatedAt: new Date(),
         folder: null,
@@ -146,10 +154,10 @@ describe('/api/notes', () => {
       mockPrisma.note.findFirst.mockResolvedValue(null); // No duplicate
       mockPrisma.note.create.mockResolvedValue(newNote);
 
-      const request = new NextRequest('http://localhost/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'Test Note', content: 'Test content' }),
+      const request = new NextRequest("http://localhost/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Test Note", content: "Test content" }),
       });
 
       const response = await POST(request);
@@ -167,26 +175,26 @@ describe('/api/notes', () => {
       });
     });
 
-    it('should return 409 for duplicate note title in same folder', async () => {
+    it("should return 409 for duplicate note title in same folder", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
       const existingNote = {
-        id: 'existing-note',
-        title: 'Test Note',
+        id: "existing-note",
+        title: "Test Note",
         folderId: null,
-        ownerId: 'user-1',
+        ownerId: "user-1",
       };
 
       mockPrisma.note.findFirst.mockResolvedValue(existingNote);
 
-      const request = new NextRequest('http://localhost/api/notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'Test Note', content: 'Test content' }),
+      const request = new NextRequest("http://localhost/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Test Note", content: "Test content" }),
       });
 
       const response = await POST(request);
@@ -194,42 +202,42 @@ describe('/api/notes', () => {
     });
   });
 
-  describe('GET /api/notes', () => {
-    it('should return 401 when unauthorized', async () => {
+  describe("GET /api/notes", () => {
+    it("should return 401 when unauthorized", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: false,
-        error: 'Invalid token',
+        error: "Invalid token",
       });
 
-      const request = new NextRequest('http://localhost/api/notes');
+      const request = new NextRequest("http://localhost/api/notes");
       const response = await GET(request);
       expect(response.status).toBe(401);
     });
 
-    it('should list notes successfully', async () => {
+    it("should list notes successfully", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
       const notes = [
         {
-          id: 'note-1',
-          title: 'Note 1',
-          contentMarkdown: 'Content 1',
+          id: "note-1",
+          title: "Note 1",
+          contentMarkdown: "Content 1",
           folderId: null,
-          ownerId: 'user-1',
+          ownerId: "user-1",
           createdAt: new Date(),
           updatedAt: new Date(),
           folder: null,
         },
         {
-          id: 'note-2',
-          title: 'Note 2',
-          contentMarkdown: 'Content 2',
+          id: "note-2",
+          title: "Note 2",
+          contentMarkdown: "Content 2",
           folderId: null,
-          ownerId: 'user-1',
+          ownerId: "user-1",
           createdAt: new Date(),
           updatedAt: new Date(),
           folder: null,
@@ -238,62 +246,68 @@ describe('/api/notes', () => {
 
       mockPrisma.note.findMany.mockResolvedValue(notes);
 
-      const request = new NextRequest('http://localhost/api/notes');
+      const request = new NextRequest("http://localhost/api/notes");
       const response = await GET(request);
       expect(response.status).toBe(200);
 
       const responseData = await response.json();
-      expect(responseData.notes).toEqual(notes.map(note => ({
-        id: note.id,
-        title: note.title,
-        content: note.contentMarkdown,
-        folderId: note.folderId,
-        folder: note.folder,
-        createdAt: note.createdAt,
-        updatedAt: note.updatedAt,
-      })));
+      expect(responseData.notes).toEqual(
+        notes.map((note) => ({
+          id: note.id,
+          title: note.title,
+          content: note.contentMarkdown,
+          folderId: note.folderId,
+          folder: note.folder,
+          createdAt: note.createdAt,
+          updatedAt: note.updatedAt,
+        })),
+      );
     });
   });
 
-  describe('GET /api/notes/[noteId]', () => {
-    it('should return 401 when unauthorized', async () => {
+  describe("GET /api/notes/[noteId]", () => {
+    it("should return 401 when unauthorized", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: false,
-        error: 'Invalid token',
+        error: "Invalid token",
       });
 
-      const request = new NextRequest('http://localhost/api/notes/note-1');
-      const response = await getNoteById(request, { params: { noteId: 'note-1' } });
+      const request = new NextRequest("http://localhost/api/notes/note-1");
+      const response = await getNoteById(request, {
+        params: { noteId: "note-1" },
+      });
       expect(response.status).toBe(401);
     });
 
-    it('should return 404 for non-existent note', async () => {
+    it("should return 404 for non-existent note", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
       mockPrisma.note.findFirst.mockResolvedValue(null);
 
-      const request = new NextRequest('http://localhost/api/notes/note-1');
-      const response = await getNoteById(request, { params: { noteId: 'note-1' } });
+      const request = new NextRequest("http://localhost/api/notes/note-1");
+      const response = await getNoteById(request, {
+        params: { noteId: "note-1" },
+      });
       expect(response.status).toBe(404);
     });
 
-    it('should return note successfully', async () => {
+    it("should return note successfully", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
       const note = {
-        id: 'note-1',
-        title: 'Test Note',
-        contentMarkdown: 'Test content',
+        id: "note-1",
+        title: "Test Note",
+        contentMarkdown: "Test content",
         folderId: null,
-        ownerId: 'user-1',
+        ownerId: "user-1",
         createdAt: new Date(),
         updatedAt: new Date(),
         folder: null,
@@ -301,8 +315,10 @@ describe('/api/notes', () => {
 
       mockPrisma.note.findFirst.mockResolvedValue(note);
 
-      const request = new NextRequest('http://localhost/api/notes/note-1');
-      const response = await getNoteById(request, { params: { noteId: 'note-1' } });
+      const request = new NextRequest("http://localhost/api/notes/note-1");
+      const response = await getNoteById(request, {
+        params: { noteId: "note-1" },
+      });
       expect(response.status).toBe(200);
 
       const responseData = await response.json();
@@ -318,55 +334,61 @@ describe('/api/notes', () => {
     });
   });
 
-  describe('PUT /api/notes/[noteId]', () => {
-    it('should return 401 when unauthorized', async () => {
+  describe("PUT /api/notes/[noteId]", () => {
+    it("should return 401 when unauthorized", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: false,
-        error: 'Invalid token',
+        error: "Invalid token",
       });
 
-      const request = new NextRequest('http://localhost/api/notes/note-1', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'Updated Note', content: 'Updated content' }),
+      const request = new NextRequest("http://localhost/api/notes/note-1", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Updated Note",
+          content: "Updated content",
+        }),
       });
 
-      const response = await PUT(request, { params: { noteId: 'note-1' } });
+      const response = await PUT(request, { params: { noteId: "note-1" } });
       expect(response.status).toBe(401);
     });
 
-    it('should return 404 for non-existent note', async () => {
+    it("should return 404 for non-existent note", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
       mockPrisma.note.findFirst.mockResolvedValue(null);
 
-      const request = new NextRequest('http://localhost/api/notes/note-1', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'Updated Note', content: 'Updated content' }),
+      const request = new NextRequest("http://localhost/api/notes/note-1", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Updated Note",
+          content: "Updated content",
+        }),
       });
 
-      const response = await PUT(request, { params: { noteId: 'note-1' } });
+      const response = await PUT(request, { params: { noteId: "note-1" } });
       expect(response.status).toBe(404);
     });
 
-    it('should update note successfully', async () => {
+    it("should update note successfully", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
       const existingNote = {
-        id: 'note-1',
-        title: 'Test Note',
-        contentMarkdown: 'Test content',
+        id: "note-1",
+        title: "Test Note",
+        contentMarkdown: "Test content",
         folderId: null,
-        ownerId: 'user-1',
+        ownerId: "user-1",
         createdAt: new Date(),
         updatedAt: new Date(),
         folder: null,
@@ -374,8 +396,8 @@ describe('/api/notes', () => {
 
       const updatedNote = {
         ...existingNote,
-        title: 'Updated Note',
-        contentMarkdown: 'Updated content',
+        title: "Updated Note",
+        contentMarkdown: "Updated content",
         updatedAt: new Date(),
       };
 
@@ -388,66 +410,69 @@ describe('/api/notes', () => {
 
       mockPrisma.note.update.mockResolvedValue(updatedNote);
 
-      const request = new NextRequest('http://localhost/api/notes/note-1', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: 'Updated Note', content: 'Updated content' }),
+      const request = new NextRequest("http://localhost/api/notes/note-1", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Updated Note",
+          content: "Updated content",
+        }),
       });
 
-      const response = await PUT(request, { params: { noteId: 'note-1' } });
+      const response = await PUT(request, { params: { noteId: "note-1" } });
       expect(response.status).toBe(200);
 
       const responseData = await response.json();
-      expect(responseData.note.title).toBe('Updated Note');
-      expect(responseData.note.content).toBe('Updated content');
+      expect(responseData.note.title).toBe("Updated Note");
+      expect(responseData.note.content).toBe("Updated content");
     });
   });
 
-  describe('DELETE /api/notes/[noteId]', () => {
-    it('should return 401 when unauthorized', async () => {
+  describe("DELETE /api/notes/[noteId]", () => {
+    it("should return 401 when unauthorized", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: false,
-        error: 'Invalid token',
+        error: "Invalid token",
       });
 
-      const request = new NextRequest('http://localhost/api/notes/note-1', {
-        method: 'DELETE',
+      const request = new NextRequest("http://localhost/api/notes/note-1", {
+        method: "DELETE",
       });
 
-      const response = await DELETE(request, { params: { noteId: 'note-1' } });
+      const response = await DELETE(request, { params: { noteId: "note-1" } });
       expect(response.status).toBe(401);
     });
 
-    it('should return 404 for non-existent note', async () => {
+    it("should return 404 for non-existent note", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
       mockPrisma.note.findFirst.mockResolvedValue(null);
 
-      const request = new NextRequest('http://localhost/api/notes/note-1', {
-        method: 'DELETE',
+      const request = new NextRequest("http://localhost/api/notes/note-1", {
+        method: "DELETE",
       });
 
-      const response = await DELETE(request, { params: { noteId: 'note-1' } });
+      const response = await DELETE(request, { params: { noteId: "note-1" } });
       expect(response.status).toBe(404);
     });
 
-    it('should delete note successfully', async () => {
+    it("should delete note successfully", async () => {
       mockVerifyJWT.mockResolvedValue({
         success: true,
-        userId: 'user-1',
-        email: 'test@example.com',
+        userId: "user-1",
+        email: "test@example.com",
       });
 
       const existingNote = {
-        id: 'note-1',
-        title: 'Test Note',
-        content: 'Test content',
+        id: "note-1",
+        title: "Test Note",
+        content: "Test content",
         folderId: null,
-        ownerId: 'user-1',
+        ownerId: "user-1",
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -455,15 +480,15 @@ describe('/api/notes', () => {
       mockPrisma.note.findFirst.mockResolvedValue(existingNote);
       mockPrisma.note.delete.mockResolvedValue(existingNote);
 
-      const request = new NextRequest('http://localhost/api/notes/note-1', {
-        method: 'DELETE',
+      const request = new NextRequest("http://localhost/api/notes/note-1", {
+        method: "DELETE",
       });
 
-      const response = await DELETE(request, { params: { noteId: 'note-1' } });
+      const response = await DELETE(request, { params: { noteId: "note-1" } });
       expect(response.status).toBe(200);
 
       const responseData = await response.json();
-      expect(responseData.message).toBe('Note deleted successfully');
+      expect(responseData.message).toBe("Note deleted successfully");
     });
   });
 });

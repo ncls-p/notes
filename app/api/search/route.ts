@@ -46,10 +46,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Add detailed request logging
-    logger.debug({
-      url: request.url,
-      headers: Object.fromEntries(request.headers.entries()),
-    }, "Request details");
+    logger.debug(
+      {
+        url: request.url,
+        headers: Object.fromEntries(request.headers.entries()),
+      },
+      "Request details",
+    );
 
     const urlSearchParams = new URL(request.url).searchParams;
     const query = urlSearchParams.get("query");
@@ -111,12 +114,14 @@ export async function GET(request: NextRequest) {
     const folders = await prisma.folder.findMany({
       where: {
         ownerId: authResult.userId,
-        ...(searchQuery ? {
-          name: {
-            contains: searchQuery,
-            mode: "insensitive",
-          }
-        } : {})
+        ...(searchQuery
+          ? {
+              name: {
+                contains: searchQuery,
+                mode: "insensitive",
+              },
+            }
+          : {}),
       },
       include: {
         parent: {
@@ -194,10 +199,10 @@ export async function GET(request: NextRequest) {
 
     // Prefetch all folder IDs needed for path building
     const allFolderIds = new Set<string>();
-    (folders || []).forEach(folder => {
+    (folders || []).forEach((folder) => {
       if (folder.parentId) allFolderIds.add(folder.parentId);
     });
-    (notes || []).forEach(note => {
+    (notes || []).forEach((note) => {
       if (note.folderId) allFolderIds.add(note.folderId);
     });
 
@@ -209,17 +214,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all parent folders in a single query
-    const parentFolders = allFolderIds.size > 0
-      ? await prisma.folder.findMany({
-          where: { id: { in: Array.from(allFolderIds) }},
-          select: { id: true, name: true, parentId: true },
-        })
-      : [];
+    const parentFolders =
+      allFolderIds.size > 0
+        ? await prisma.folder.findMany({
+            where: { id: { in: Array.from(allFolderIds) } },
+            select: { id: true, name: true, parentId: true },
+          })
+        : [];
 
     logger.debug(`Fetched ${parentFolders.length} parent folders`);
 
     // Build folder map for path resolution with all ancestors
-    const folderMap = new Map<string, { name: string; parentId: string | null }>();
+    const folderMap = new Map<
+      string,
+      { name: string; parentId: string | null }
+    >();
     const allAncestors = new Set(parentFolders);
     const queue = [...parentFolders];
 
@@ -239,7 +248,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Add all ancestors to the folder map
-    allAncestors.forEach(folder => folderMap.set(folder.id, folder));
+    allAncestors.forEach((folder) => folderMap.set(folder.id, folder));
     logger.debug(`Built folder map with ${folderMap.size} entries`);
 
     /**
@@ -255,18 +264,17 @@ export async function GET(request: NextRequest) {
     };
 
     // Add folder paths to results
-    const foldersWithPaths = (folders || []).map(folder => ({
+    const foldersWithPaths = (folders || []).map((folder) => ({
       ...folder,
       path: buildFolderPath(folder.parentId),
       type: "folder" as const,
     }));
 
-    const notesWithPaths = (notes || []).map(note => ({
+    const notesWithPaths = (notes || []).map((note) => ({
       ...note,
       path: buildFolderPath(note.folderId),
       type: "note" as const,
     }));
-
 
     // Combine and sort results
     let allResults = [...foldersWithPaths, ...notesWithPaths];

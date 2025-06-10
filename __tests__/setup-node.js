@@ -1,12 +1,12 @@
-require('@testing-library/jest-dom');
+require("@testing-library/jest-dom");
 
 // Set essential environment variables for API tests
-process.env.JWT_SECRET = 'test-jwt-secret-for-api-tests';
-process.env.REFRESH_TOKEN_SECRET = 'test-refresh-token-secret-for-api-tests';
-process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = "test-jwt-secret-for-api-tests";
+process.env.REFRESH_TOKEN_SECRET = "test-refresh-token-secret-for-api-tests";
+process.env.NODE_ENV = "test";
 
 // Polyfill globals needed for Next.js API routes testing
-const { TextEncoder, TextDecoder } = require('util');
+const { TextEncoder, TextDecoder } = require("util");
 
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
@@ -63,8 +63,8 @@ class MockCookies {
 // Mock Request and Response for Next.js API routes
 global.Request = class Request {
   constructor(input, init = {}) {
-    this.url = typeof input === 'string' ? input : input.url;
-    this.method = init.method || 'GET';
+    this.url = typeof input === "string" ? input : input.url;
+    this.method = init.method || "GET";
     this.headers = new MockHeaders(Object.entries(init.headers || {}));
     this.body = init.body;
     this._json = null;
@@ -72,7 +72,7 @@ global.Request = class Request {
 
   async json() {
     if (this._json !== null) return this._json;
-    if (typeof this.body === 'string') {
+    if (typeof this.body === "string") {
       this._json = JSON.parse(this.body);
     } else {
       this._json = this.body;
@@ -85,24 +85,24 @@ global.Response = class Response {
   constructor(body = null, init = {}) {
     this.body = body;
     this.status = init.status || 200;
-    this.statusText = init.statusText || '';
+    this.statusText = init.statusText || "";
     this.headers = new MockHeaders(Object.entries(init.headers || {}));
     this.ok = this.status >= 200 && this.status < 300;
     this.redirected = false;
-    this.type = 'basic';
-    this.url = '';
+    this.type = "basic";
+    this.url = "";
     this.cookies = new MockCookies();
   }
 
   async json() {
-    if (typeof this.body === 'string') {
+    if (typeof this.body === "string") {
       return JSON.parse(this.body);
     }
     return this.body;
   }
 
   async text() {
-    if (typeof this.body === 'object') {
+    if (typeof this.body === "object") {
       return JSON.stringify(this.body);
     }
     return String(this.body);
@@ -117,20 +117,20 @@ const MockNextResponse = class NextResponse extends global.Response {
 
   static json(data, init = {}) {
     const response = new MockNextResponse(data, init);
-    response.headers.set('content-type', 'application/json');
+    response.headers.set("content-type", "application/json");
     return response;
   }
 };
 
 // Replace NextResponse with our mock for testing
-jest.doMock('next/server', () => ({
+jest.doMock("next/server", () => ({
   NextResponse: MockNextResponse,
   NextRequest: global.Request,
 }));
 
 // Mock environment variables for testing
-process.env.JWT_SECRET = 'test-jwt-secret';
-process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret';
+process.env.JWT_SECRET = "test-jwt-secret";
+process.env.REFRESH_TOKEN_SECRET = "test-refresh-secret";
 
 // Mock fetch if not available
 if (!global.fetch) {
@@ -138,11 +138,11 @@ if (!global.fetch) {
 }
 
 // Setup for Node.js test environment
-global.TextEncoder = require('util').TextEncoder;
-global.TextDecoder = require('util').TextDecoder;
+global.TextEncoder = require("util").TextEncoder;
+global.TextDecoder = require("util").TextDecoder;
 
 // Mock PrismaClient globally for all Node.js tests
-jest.mock('@prisma/client', () => {
+jest.mock("@prisma/client", () => {
   const mockUser = {
     findUnique: jest.fn(),
     findMany: jest.fn(),
@@ -192,38 +192,38 @@ jest.mock('@prisma/client', () => {
 });
 
 // Mock jsonwebtoken globally
-jest.mock('jsonwebtoken', () => ({
+jest.mock("jsonwebtoken", () => ({
   sign: jest.fn(),
   verify: jest.fn(),
   TokenExpiredError: class TokenExpiredError extends Error {
-    name = 'TokenExpiredError';
+    name = "TokenExpiredError";
     constructor(message, expiredAt) {
       super(message);
       this.expiredAt = expiredAt;
     }
   },
   JsonWebTokenError: class JsonWebTokenError extends Error {
-    name = 'JsonWebTokenError';
+    name = "JsonWebTokenError";
   },
 }));
 
 // Mock next/headers
-jest.mock('next/headers', () => ({
+jest.mock("next/headers", () => ({
   cookies: jest.fn().mockResolvedValue(new MockCookies()),
   headers: jest.fn(),
 }));
 
 // Mock next/navigation
-jest.mock('next/navigation', () => ({
+jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
   notFound: jest.fn(),
 }));
 
 // Configure Zod to use its actual implementation for tests
 // This ensures that schema.parse() throws real ZodErrors.
-const actualZod = jest.requireActual('zod');
+const actualZod = jest.requireActual("zod");
 
-jest.mock('zod', () => {
+jest.mock("zod", () => {
   // We want to use the actual Zod implementation for 'z' and 'ZodError'
   // to ensure that validation logic and instanceof checks work correctly.
   // Other parts of Zod that might be less critical for tests could be mocked

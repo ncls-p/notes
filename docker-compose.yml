@@ -17,10 +17,10 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '3000:3000'
+      - "3000:3000"
     environment:
       # Frontend specific (can be prefixed with NEXT_PUBLIC_)
-      NEXT_PUBLIC_APP_NAME: 'MyNotesApp'
+      NEXT_PUBLIC_APP_NAME: "MyNotesApp"
       # Backend specific (not prefixed with NEXT_PUBLIC_ unless needed by client)
       JWT_SECRET: ${JWT_SECRET}
       REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
@@ -51,7 +51,7 @@ services:
     # - app_data:/app/data # For temporary files, logs if not sent to stdout and if needed
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health'] # Health endpoint check for Docker environment
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"] # Health endpoint check for Docker environment
       interval: 30s
       timeout: 10s
       retries: 3
@@ -61,7 +61,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg16 # Pre-built image with pgvector for Postgres 16
     ports:
-      - '${POSTGRES_PORT:-5432}:5432' # Optional: Expose Postgres for local tools
+      - "${POSTGRES_PORT:-5432}:5432" # Optional: Expose Postgres for local tools
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -70,7 +70,7 @@ services:
       - postgres_data:/var/lib/postgresql/data # Persistent data volume
     restart: unless-stopped
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -28,6 +28,8 @@ describe("buildFolderPath", () => {
   });
 
   test("detects cycles in folder hierarchy", () => {
-    expect(buildFolderPath(folderMap, "cycle")).toBe("Cycle detected: CycleFolder");
+    expect(buildFolderPath(folderMap, "cycle")).toBe(
+      "Cycle detected: CycleFolder",
+    );
   });
 });

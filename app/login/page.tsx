@@ -1,8 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -10,19 +8,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
+  ArrowRight,
   Eye,
   EyeOff,
   LogIn,
-  UserPlus,
-  ArrowRight,
   Sparkles,
+  UserPlus,
 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { z } from "zod";
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -32,8 +32,8 @@ const loginFormSchema = z.object({
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 // Import the token clearing function
-import { clearAuthTokens } from "@/lib/apiClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { clearAuthTokens } from "@/lib/apiClient";
 
 function LoginForm() {
   const { login, isLoading, user } = useAuth();
@@ -62,9 +62,9 @@ function LoginForm() {
 
   useEffect(() => {
     // Check for success message from registration
-    const message = searchParams.get('message');
-    if (message === 'registration-success') {
-      setSuccessMessage('Registration successful! Please sign in.');
+    const message = searchParams.get("message");
+    if (message === "registration-success") {
+      setSuccessMessage("Registration successful! Please sign in.");
     }
   }, [searchParams]);
 
@@ -122,23 +122,25 @@ function LoginForm() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-1/2 -right-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse-soft"></div>
-          <div className="absolute -bottom-1/2 -left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse-soft delay-1000"></div>
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl animate-float"></div>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/30 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Subtle animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-1/2 -right-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute -bottom-1/2 -left-1/2 w-96 h-96 bg-primary/3 rounded-full blur-3xl animate-pulse-slow"></div>
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/2 rounded-full blur-3xl animate-bounce-subtle"></div>
         </div>
 
         <div className="relative z-10">
-          <Card className="glass-effect border-slate-700/50 shadow-2xl animate-fade-in-scale">
+          <Card className="bg-card/80 backdrop-blur-sm border shadow-xl animate-scale-in">
             <CardContent className="p-8 text-center space-y-4">
-              <div className="loading-shimmer w-16 h-16 rounded-full mx-auto"></div>
+              <div className="w-16 h-16 rounded-full mx-auto bg-primary/10 animate-pulse flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-primary animate-pulse"></div>
+              </div>
               <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-slate-200">
+                <h2 className="text-xl font-semibold text-foreground">
                   Checking Authentication
                 </h2>
-                <p className="text-slate-400">Please wait...</p>
+                <p className="text-muted-foreground">Please wait...</p>
               </div>
             </CardContent>
           </Card>
@@ -153,48 +155,45 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-1/2 -right-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse-soft"></div>
-        <div className="absolute -bottom-1/2 -left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse-soft delay-1000"></div>
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl animate-float"></div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/30 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Subtle animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -right-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-1/2 -left-1/2 w-96 h-96 bg-primary/3 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/2 rounded-full blur-3xl animate-bounce-subtle"></div>
       </div>
 
       <div className="w-full max-w-md relative z-10">
-        <Card className="glass-effect border-slate-700/50 shadow-2xl animate-fade-in-scale">
+        <Card className="bg-card/80 backdrop-blur-sm border shadow-xl animate-scale-in">
           <CardHeader className="space-y-6 text-center pb-8">
             <div className="flex justify-center items-center">
-              <div className="relative animate-float">
-                <svg
-                  width="64"
-                  height="64"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="text-primary drop-shadow-lg"
-                >
-                  <path
-                    d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M12.5 7H11V13L16.25 16.15L17 14.92L12.5 12.25V7Z"
-                    fill="currentColor"
-                  />
-                  <path
-                    d="M8.5 10.5C8.5 9.67 9.17 9 10 9C10.83 9 11.5 9.67 11.5 10.5C11.5 11.33 10.83 12 10 12C9.17 12 8.5 11.33 8.5 10.5Z"
-                    fill="currentColor"
-                  />
-                </svg>
-                <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-yellow-400 animate-pulse" />
+              <div className="relative animate-bounce-subtle">
+                <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-xl">
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="text-white"
+                  >
+                    <path
+                      d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-primary animate-pulse" />
               </div>
             </div>
             <div className="space-y-2">
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
+              <CardTitle className="text-3xl font-bold text-foreground tracking-tight">
                 Welcome Back
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-muted-foreground">
                 Sign in to your Noteworthy account
               </CardDescription>
             </div>
@@ -232,7 +231,7 @@ function LoginForm() {
               >
                 <Label
                   htmlFor="email"
-                  className="text-sm font-medium text-slate-300"
+                  className="text-sm font-medium text-foreground"
                 >
                   Email address
                 </Label>
@@ -265,7 +264,7 @@ function LoginForm() {
               >
                 <Label
                   htmlFor="password"
-                  className="text-sm font-medium text-slate-300"
+                  className="text-sm font-medium text-foreground"
                 >
                   Password
                 </Label>
@@ -286,7 +285,7 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-300 transition-colors"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -338,10 +337,10 @@ function LoginForm() {
               style={{ animationDelay: "400ms" }}
             >
               <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-slate-600" />
+                <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-slate-800 px-2 text-slate-400">
+                <span className="bg-card px-2 text-muted-foreground">
                   Don't have an account?
                 </span>
               </div>
@@ -375,7 +374,7 @@ function LoginForm() {
           className="mt-8 text-center animate-slide-in-bottom"
           style={{ animationDelay: "600ms" }}
         >
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted-foreground">
             Secure, private, and always under your control
           </p>
         </div>
@@ -386,12 +385,12 @@ function LoginForm() {
 
 function LoginPageFallback() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-1/2 -right-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse-soft"></div>
-        <div className="absolute -bottom-1/2 -left-1/2 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl animate-pulse-soft delay-1000"></div>
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl animate-float"></div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/30 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Subtle animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-1/2 -right-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute -bottom-1/2 -left-1/2 w-96 h-96 bg-primary/3 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/2 rounded-full blur-3xl animate-bounce-subtle"></div>
       </div>
 
       <div className="relative z-10">

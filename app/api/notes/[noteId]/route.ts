@@ -14,14 +14,17 @@ const updateNoteSchema = z.object({
   folderId: z.string().optional().nullable(),
 });
 
-export async function GET(request: NextRequest, context: any) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ noteId: string }> },
+) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const noteId = context.params.noteId;
+    const { noteId } = await params;
 
     const note = await prisma.note.findFirst({
       where: {
@@ -41,7 +44,7 @@ export async function GET(request: NextRequest, context: any) {
     if (!note) {
       return NextResponse.json(
         { error: "Note not found or access denied" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -51,7 +54,9 @@ export async function GET(request: NextRequest, context: any) {
         title: note.title,
         content: note.contentMarkdown,
         folderId: note.folderId,
-        folder: note.folderId ? { id: note.folderId, name: note.folder?.name } : null,
+        folder: note.folderId
+          ? { id: note.folderId, name: note.folder?.name }
+          : null,
         createdAt: note.createdAt,
         updatedAt: note.updatedAt,
       },
@@ -60,19 +65,22 @@ export async function GET(request: NextRequest, context: any) {
     console.error("Error fetching note:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
-export async function PUT(request: NextRequest, context: any) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ noteId: string }> },
+) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const noteId = context.params.noteId;
+    const { noteId } = await params;
 
     // Verify note exists and belongs to user
     const existingNote = await prisma.note.findFirst({
@@ -85,7 +93,7 @@ export async function PUT(request: NextRequest, context: any) {
     if (!existingNote) {
       return NextResponse.json(
         { error: "Note not found or access denied" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -107,7 +115,7 @@ export async function PUT(request: NextRequest, context: any) {
       if (!folder) {
         return NextResponse.json(
           { error: "Folder not found or access denied" },
-          { status: 404 }
+          { status: 404 },
         );
       }
     }
@@ -131,16 +139,19 @@ export async function PUT(request: NextRequest, context: any) {
       if (duplicateNote) {
         return NextResponse.json(
           { error: "A note with this title already exists in this location" },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
 
     // Map content to contentMarkdown for database
     const updateData: any = {};
-    if (validatedData.title !== undefined) updateData.title = validatedData.title;
-    if (validatedData.content !== undefined) updateData.contentMarkdown = validatedData.content;
-    if (validatedData.folderId !== undefined) updateData.folderId = validatedData.folderId;
+    if (validatedData.title !== undefined)
+      updateData.title = validatedData.title;
+    if (validatedData.content !== undefined)
+      updateData.contentMarkdown = validatedData.content;
+    if (validatedData.folderId !== undefined)
+      updateData.folderId = validatedData.folderId;
 
     const updatedNote = await prisma.note.update({
       where: { id: noteId },
@@ -170,26 +181,29 @@ export async function PUT(request: NextRequest, context: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid input", details: error.errors },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     console.error("Error updating note:", error);
     return NextResponse.json(
-      { error极: "Internal server error" },
-      { status: 500 }
+      { error: "Internal server error" },
+      { status: 500 },
     );
   }
 }
 
-export async function DELETE(request: NextRequest, context: any) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ noteId: string }> },
+) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const noteId = context.params.noteId;
+    const { noteId } = await params;
 
     // Verify note exists and belongs to user
     const existingNote = await prisma.note.findFirst({
@@ -202,7 +216,7 @@ export async function DELETE(request: NextRequest, context: any) {
     if (!existingNote) {
       return NextResponse.json(
         { error: "Note not found or access denied" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -215,7 +229,7 @@ export async function DELETE(request: NextRequest, context: any) {
     console.error("Error deleting note:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

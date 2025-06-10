@@ -7,9 +7,9 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  console.error('Global error caught:', error);
-  console.error('Error stack:', error.stack);
-  console.error('Error message:', error.message);
+  console.error("Global error caught:", error);
+  console.error("Error stack:", error.stack);
+  console.error("Error message:", error.message);
 
   return (
     <html>

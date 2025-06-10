@@ -12,7 +12,7 @@ nextjsApp:
     name: noteworthy
     type: NodePort
     port: 3000
-    nodePort: null  # Optional: Specify a NodePort (30000-32767). If null/empty, Kubernetes assigns one.
+    nodePort: null # Optional: Specify a NodePort (30000-32767). If null/empty, Kubernetes assigns one.
   resources:
     requests:
       cpu: "100m"
@@ -21,11 +21,11 @@ nextjsApp:
       cpu: "500m"
       memory: "512Mi"
   config:
-    NEXT_PUBLIC_APP_NAME: 'Noteworthy'
-    LOG_LEVEL: 'info'
-    NODE_ENV: 'development'
-    PORT: '3000'
-    HOSTNAME: 'localhost'
+    NEXT_PUBLIC_APP_NAME: "Noteworthy"
+    LOG_LEVEL: "info"
+    NODE_ENV: "development"
+    PORT: "3000"
+    HOSTNAME: "localhost"
   secretsName: "nextjs-app-secrets"
 
 postgres:

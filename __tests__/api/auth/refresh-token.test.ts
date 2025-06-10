@@ -1,9 +1,9 @@
-import { POST } from '@/app/api/auth/refresh-token/route';
-import { NextRequest } from 'next/server';
-import { cookies } from 'next/headers';
+import { POST } from "@/app/api/auth/refresh-token/route";
+import { NextRequest } from "next/server";
+import { cookies } from "next/headers";
 
 // Mock next/headers
-jest.mock('next/headers', () => ({
+jest.mock("next/headers", () => ({
   cookies: jest.fn(),
 }));
 
@@ -12,7 +12,7 @@ const createMockRequest = (): NextRequest => {
   return {
     headers: new Headers(),
     nextUrl: {
-      pathname: '/api/auth/refresh-token',
+      pathname: "/api/auth/refresh-token",
     },
     cookies: {
       get: jest.fn(),
@@ -22,20 +22,20 @@ const createMockRequest = (): NextRequest => {
       has: jest.fn(),
     },
     // Add other required properties with mock implementations
-    ip: '127.0.0.1',
+    ip: "127.0.0.1",
     geo: {},
     // Cast to unknown first to bypass type checking
   } as unknown as NextRequest;
 };
 
-describe('/api/auth/refresh-token', () => {
+describe("/api/auth/refresh-token", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.JWT_SECRET = 'test-jwt-secret';
-    process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret';
+    process.env.JWT_SECRET = "test-jwt-secret";
+    process.env.REFRESH_TOKEN_SECRET = "test-refresh-secret";
   });
 
-  it('should return 401 when no refresh token is provided', async () => {
+  it("should return 401 when no refresh token is provided", async () => {
     // Mock cookies to return no refresh token
     (cookies as jest.Mock).mockReturnValue({
       get: jest.fn().mockReturnValue(undefined),
@@ -46,13 +46,13 @@ describe('/api/auth/refresh-token', () => {
     const data = await response.json();
 
     expect(response.status).toBe(401);
-    expect(data.error).toBe('No refresh token provided');
+    expect(data.error).toBe("No refresh token provided");
   });
 
-  it('should return 500 when there are internal errors', async () => {
+  it("should return 500 when there are internal errors", async () => {
     // Mock cookies to return a refresh token
     (cookies as jest.Mock).mockReturnValue({
-      get: jest.fn().mockReturnValue({ value: 'valid-refresh-token' }),
+      get: jest.fn().mockReturnValue({ value: "valid-refresh-token" }),
     });
 
     // Save original values
@@ -68,7 +68,7 @@ describe('/api/auth/refresh-token', () => {
     const data = await response.json();
 
     expect(response.status).toBe(500);
-    expect(data.error).toBe('Internal server configuration error');
+    expect(data.error).toBe("Internal server configuration error");
 
     // Restore original values
     process.env.JWT_SECRET = originalJwtSecret;

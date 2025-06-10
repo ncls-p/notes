@@ -154,10 +154,10 @@ export default function Dashboard() {
   const isSearchMode = searchQuery.trim().length > 0;
   const filteredFolders = isSearchMode
     ? (searchResults || []).filter((result) => result.type === "folder")
-    : (folders || []);
+    : folders || [];
   const filteredNotes = isSearchMode
     ? (searchResults || []).filter((result) => result.type === "note")
-    : (notes || []);
+    : notes || [];
 
   // Defensive check to ensure filteredNotes is always an array
   const safeFilteredNotes = Array.isArray(filteredNotes) ? filteredNotes : [];
@@ -203,7 +203,7 @@ export default function Dashboard() {
       // Handle the case where API returns {notes: Note[]} instead of Note[]
       const notesArray = Array.isArray(notesResponse)
         ? (notesResponse as Note[])
-        : ((notesResponse as {notes: Note[]})?.notes || []);
+        : (notesResponse as { notes: Note[] })?.notes || [];
 
       setNotes(notesArray);
     } catch (err: unknown) {
@@ -403,7 +403,10 @@ export default function Dashboard() {
                 Noteworthy
               </h1>
             </div>
-            <div className="flex items-center space-x-4 animate-slide-in-right" data-testid="user-menu">
+            <div
+              className="flex items-center space-x-4 animate-slide-in-right"
+              data-testid="user-menu"
+            >
               <span className="text-muted-foreground hidden sm:inline">
                 Welcome, {user.email}
               </span>
@@ -443,7 +446,11 @@ export default function Dashboard() {
             onOpenChange={setIsCreateFolderOpen}
           >
             <DialogTrigger asChild>
-              <Button variant="default" className="group" data-testid="new-folder-button">
+              <Button
+                variant="default"
+                className="group"
+                data-testid="new-folder-button"
+              >
                 <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200" />
                 New Folder
               </Button>
@@ -479,7 +486,11 @@ export default function Dashboard() {
           {/* Create Note Dialog */}
           <Dialog open={isCreateNoteOpen} onOpenChange={setIsCreateNoteOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="group smooth-hover" data-testid="new-note-button">
+              <Button
+                variant="outline"
+                className="group smooth-hover"
+                data-testid="new-note-button"
+              >
                 <Plus className="w-4 h-4 mr-2 group-hover:rotate-90 transition-transform duration-200" />
                 New Note
               </Button>
@@ -644,8 +655,8 @@ export default function Dashboard() {
           {isSearchMode && !isSearching && (
             <div className="p-4 bg-primary/10 border border-primary/30 text-primary rounded-lg shadow-md animate-slide-in-bottom">
               <span className="font-semibold">Search Results:</span> Found{" "}
-              {filteredFolders.length + safeFilteredNotes.length} items matching "
-              {searchQuery}"
+              {filteredFolders.length + safeFilteredNotes.length} items matching
+              "{searchQuery}"
             </div>
           )}
 

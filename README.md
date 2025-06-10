@@ -17,7 +17,7 @@
 ## 📋 Table of Contents
 
 - [🧠 Noteworthy: Your Self-Hosted, AI-Powered Knowledge Hub 🚀](#-noteworthy-your-self-hosted-ai-powered-knowledge-hub-)
-    - [Take control of your notes, your data, and your AI.](#take-control-of-your-notes-your-data-and-your-ai)
+  - [Take control of your notes, your data, and your AI.](#take-control-of-your-notes-your-data-and-your-ai)
   - [📋 Table of Contents](#-table-of-contents)
   - [🌟 Key Features](#-key-features)
   - [🛠️ Tech Stack](#️-tech-stack)
@@ -176,25 +176,31 @@ For production environments or when you prefer Kubernetes deployment, Noteworthy
 The `deploy.sh` script automates the installation or upgrade of the Noteworthy Helm chart:
 
 1.  **Basic deployment with default settings:**
+
     ```bash
     ./deploy.sh
     ```
+
     This deploys Noteworthy with:
+
     - Release name: `noteworthy`
     - Namespace: `noteworthy`
     - Default values from [`noteworthy-chart/values.yaml`](noteworthy-chart/values.yaml)
 
 2.  **Custom release name and namespace:**
+
     ```bash
     ./deploy.sh --release-name my-noteworthy --namespace noteworthy-prod
     ```
 
 3.  **Using a custom values file:**
+
     ```bash
     ./deploy.sh --values ./my-custom-values.yaml
     ```
 
 4.  **Complete example with all options:**
+
     ```bash
     ./deploy.sh \
       --release-name noteworthy-staging \

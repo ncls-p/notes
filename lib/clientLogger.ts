@@ -89,7 +89,11 @@ class ClientLogger {
       ? ` [Session: ${entry.sessionId.substring(0, 8)}...]`
       : "";
 
-    return `[${entry.timestamp}] [${entry.level.toUpperCase()}]${userStr}${sessionStr} ${entry.message}${contextStr}`;
+    return `[${
+      entry.timestamp
+    }] [${entry.level.toUpperCase()}]${userStr}${sessionStr} ${
+      entry.message
+    }${contextStr}`;
   }
 
   debug(message: string, context?: Record<string, unknown>) {
@@ -174,7 +178,9 @@ class ClientLogger {
     context?: Record<string, unknown>,
   ) {
     const level = status >= 400 ? "warn" : "debug";
-    const message = `${method} ${url} → ${status}${duration ? ` (${duration}ms)` : ""}`;
+    const message = `${method} ${url} → ${status}${
+      duration ? ` (${duration}ms)` : ""
+    }`;
 
     this[level](message, {
       requestType: "response",

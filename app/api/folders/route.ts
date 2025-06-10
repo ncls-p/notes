@@ -1,26 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { verifyJWT } from '@/lib/auth/serverAuth';
-import prisma from '@/lib/db';
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { verifyJWT } from "@/lib/auth/serverAuth";
+import prisma from "@/lib/db";
 
 // Schema for creating a folder
 const createFolderSchema = z.object({
-  name: z.string().min(1, 'Folder name is required').max(255, 'Folder name too long'),
+  name: z
+    .string()
+    .min(1, "Folder name is required")
+    .max(255, "Folder name too long"),
   parentId: z.string().uuid().optional().nullable(),
 });
 
 // Schema for listing folders
 const listFoldersSchema = z.object({
   parentId: z.string().uuid().optional().nullable(),
-  sortBy: z.enum(['name', 'createdAt', 'updatedAt']).optional().default('name'),
-  sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
+  sortBy: z.enum(["name", "createdAt", "updatedAt"]).optional().default("name"),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("asc"),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -37,8 +40,8 @@ export async function POST(request: NextRequest) {
 
       if (!parentFolder) {
         return NextResponse.json(
-          { error: 'Parent folder not found or access denied' },
-          { status: 404 }
+          { error: "Parent folder not found or access denied" },
+          { status: 404 },
         );
       }
     }
@@ -54,8 +57,8 @@ export async function POST(request: NextRequest) {
 
     if (existingFolder) {
       return NextResponse.json(
-        { error: 'A folder with this name already exists in this location' },
-        { status: 409 }
+        { error: "A folder with this name already exists in this location" },
+        { status: 409 },
       );
     }
 
@@ -93,11 +96,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid input', details: error.errors }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid input", details: error.errors },
+        { status: 400 },
+      );
     }
 
-    console.error('Error creating folder:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Error creating folder:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -105,27 +114,34 @@ export async function GET(request: NextRequest) {
   try {
     const authResult = await verifyJWT(request);
     if (!authResult.success) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const parentId = searchParams.get('parentId');
-    const sortBy = searchParams.get('sortBy');
-    const sortOrder = searchParams.get('sortOrder');
+    const parentId = searchParams.get("parentId");
+    const sortBy = searchParams.get("sortBy");
+    const sortOrder = searchParams.get("sortOrder");
 
-    console.log('[API/Folders] Received query params:', { parentId, sortBy, sortOrder });
+    console.log("[API/Folders] Received query params:", {
+      parentId,
+      sortBy,
+      sortOrder,
+    });
 
     // Validate query parameters
     const validatedQuery = listFoldersSchema.safeParse({
-      parentId: parentId === 'null' ? null : parentId,
+      parentId: parentId === "null" ? null : parentId,
       sortBy: sortBy,
       sortOrder: sortOrder,
     });
 
     if (!validatedQuery.success) {
       return NextResponse.json(
-        { error: 'Invalid query parameters', details: validatedQuery.error.errors },
-        { status: 400 }
+        {
+          error: "Invalid query parameters",
+          details: validatedQuery.error.errors,
+        },
+        { status: 400 },
       );
     }
     const {
@@ -145,19 +161,19 @@ export async function GET(request: NextRequest) {
 
       if (!parentFolder) {
         return NextResponse.json(
-          { error: 'Parent folder not found or access denied' },
-          { status: 404 }
+          { error: "Parent folder not found or access denied" },
+          { status: 404 },
         );
       }
     }
 
-    const orderByClause: { [key: string]: 'asc' | 'desc' } = {};
+    const orderByClause: { [key: string]: "asc" | "desc" } = {};
     if (validSortBy) {
       orderByClause[validSortBy] = validSortOrder;
     } else {
-      orderByClause['name'] = 'asc'; // Default sort
+      orderByClause["name"] = "asc"; // Default sort
     }
-    console.log('[API/Folders] Constructed orderBy clause:', orderByClause);
+    console.log("[API/Folders] Constructed orderBy clause:", orderByClause);
 
     const folders = await prisma.folder.findMany({
       where: {
@@ -191,17 +207,20 @@ export async function GET(request: NextRequest) {
         notesCount: folder._count.notes,
         createdAt: folder.createdAt,
         updatedAt: folder.updatedAt,
-      }))
+      })),
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid query parameters', details: error.errors },
-        { status: 400 }
+        { error: "Invalid query parameters", details: error.errors },
+        { status: 400 },
       );
     }
 
-    console.error('Error fetching folders:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error("Error fetching folders:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

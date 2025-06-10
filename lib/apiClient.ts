@@ -25,7 +25,7 @@ export function clearAuthTokens() {
 }
 // --- End of placeholder ---
 
-interface ApiClientOptions extends Omit<RequestInit, 'body'> {
+interface ApiClientOptions extends Omit<RequestInit, "body"> {
   // Allow plain objects for JSON bodies, in addition to standard BodyInit types
   body?: BodyInit | object | null;
   isRetry?: boolean; // Internal flag to prevent infinite refresh loops
@@ -34,10 +34,10 @@ interface ApiClientOptions extends Omit<RequestInit, 'body'> {
 async function refreshToken(): Promise<string | null> {
   try {
     // Using fetch directly to avoid circular dependency with apiClient
-    const response = await fetch('/api/auth/refresh-token', {
-      method: 'POST',
+    const response = await fetch("/api/auth/refresh-token", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json', // Important if your server expects it
+        "Content-Type": "application/json", // Important if your server expects it
       },
       // body: JSON.stringify({}), // No body needed if refresh token is from cookie
     });
@@ -56,31 +56,32 @@ async function refreshToken(): Promise<string | null> {
       return data.accessToken;
     } else {
       clearAuthTokens();
-      throw new Error('Refresh token response did not contain accessToken');
+      throw new Error("Refresh token response did not contain accessToken");
     }
   } catch (error) {
-    console.error('Error refreshing token:', error);
+    console.error("Error refreshing token:", error);
     clearAuthTokens(); // Ensure tokens are cleared on any refresh error
     // Potentially trigger a global logout event or redirect here
     throw error; // Re-throw to be handled by the caller
   }
 }
 
-
 async function apiClient<T = unknown>(
   endpoint: string,
-  options: ApiClientOptions = {}
+  options: ApiClientOptions = {},
 ): Promise<T> {
-  const makeRequest = async (tokenForRequest: string | null): Promise<Response> => {
+  const makeRequest = async (
+    tokenForRequest: string | null,
+  ): Promise<Response> => {
     const headers = new Headers(options.headers || {});
     if (tokenForRequest) {
-      headers.append('Authorization', `Bearer ${tokenForRequest}`);
+      headers.append("Authorization", `Bearer ${tokenForRequest}`);
     }
 
     let body = options.body;
-    if (body && typeof body === 'object' && !(body instanceof FormData)) {
-      if (!headers.has('Content-Type')) {
-        headers.append('Content-Type', 'application/json');
+    if (body && typeof body === "object" && !(body instanceof FormData)) {
+      if (!headers.has("Content-Type")) {
+        headers.append("Content-Type", "application/json");
       }
       body = JSON.stringify(body);
     }
@@ -97,7 +98,8 @@ async function apiClient<T = unknown>(
 
   if (response.status === 401 && !options.isRetry) {
     // Unauthorized, potentially expired token
-    if (!refreshTokenPromise) { // If not already refreshing
+    if (!refreshTokenPromise) {
+      // If not already refreshing
       refreshTokenPromise = refreshToken().finally(() => {
         refreshTokenPromise = null; // Reset promise once completed
       });
@@ -118,11 +120,13 @@ async function apiClient<T = unknown>(
       // Refresh token itself failed (e.g., expired, invalid, network error during refresh)
       // The original 401 response will be processed.
       // clearAuthTokens() should have been called within refreshToken() on failure.
-      console.error('Failed to refresh token, original request failed:', refreshError);
+      console.error(
+        "Failed to refresh token, original request failed:",
+        refreshError,
+      );
       // No need to throw here, let the original response handling take over.
     }
   }
-
 
   if (!response.ok) {
     let errorData;
@@ -131,15 +135,22 @@ async function apiClient<T = unknown>(
     } catch (_e) {
       errorData = { message: response.statusText };
     }
-    const error = new Error(errorData.message || `API request to ${endpoint} failed with status ${response.status}`) as Error & { response?: Response; status?: number; data?: unknown };
+    const error = new Error(
+      errorData.message ||
+        `API request to ${endpoint} failed with status ${response.status}`,
+    ) as Error & { response?: Response; status?: number; data?: unknown };
     error.response = response;
     error.status = response.status;
     error.data = errorData;
     throw error;
   }
 
-  const contentType = response.headers.get('content-type');
-  if (response.status === 204 || !contentType || !contentType.includes('application/json')) {
+  const contentType = response.headers.get("content-type");
+  if (
+    response.status === 204 ||
+    !contentType ||
+    !contentType.includes("application/json")
+  ) {
     return undefined as T;
   }
 

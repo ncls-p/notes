@@ -54,7 +54,9 @@ export async function verifyJWT(
     return payload as JWTPayload;
   } catch (error) {
     throw new Error(
-      `JWT verification failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      `JWT verification failed: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
     );
   }
 }

@@ -1,35 +1,35 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
+import apiClient from "@/lib/apiClient";
+import { EditorView } from "@codemirror/view";
 import {
   ArrowLeft,
-  Save,
-  Eye,
-  Edit3,
-  Split,
   Clock,
+  Edit3,
+  Eye,
   FileText,
+  Save,
   Sparkles,
+  Split,
 } from "lucide-react";
-import apiClient from "@/lib/apiClient";
-import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
+import dynamic from "next/dynamic";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeSanitize from "rehype-sanitize";
 import rehypeHighlight from "rehype-highlight";
+import rehypeSanitize from "rehype-sanitize";
+import remarkGfm from "remark-gfm";
 // import { Mermaid } from "@/components/Mermaid";
 
 // Dynamic import for CodeMirror to avoid SSR issues
 const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
   ssr: false,
 });
-import { EditorView } from "@codemirror/view";
 
 interface Note {
   id: string;

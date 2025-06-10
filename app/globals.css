@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -24,67 +24,83 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* White */
-    --foreground: 220 13% 20%; /* Dark Cool Gray */
-    --card: 0 0% 100%; /* White */
-    --card-foreground: 220 13% 20%; /* Dark Cool Gray */
-    --popover: 0 0% 100%; /* White */
-    --popover-foreground: 220 13% 20%; /* Dark Cool Gray */
-    --primary: 220 70% 50%; /* Cool Blue */
-    --primary-foreground: 0 0% 100%; /* White */
-    --secondary: 220 10% 95%; /* Light Cool Gray */
-    --secondary-foreground: 220 13% 20%; /* Dark Cool Gray */
-    --muted: 220 10% 90%; /* Medium Cool Gray */
-    --muted-foreground: 220 10% 45%; /* Darker Medium Cool Gray */
-    --accent: 220 70% 50%; /* Cool Blue */
-    --accent-foreground: 0 0% 100%; /* White */
-    --destructive: 0 70% 50%; /* Red */
-    --destructive-foreground: 0 0% 100%; /* White */
-    --border: 220 10% 85%; /* Light Border Gray */
-    --input: 220 10% 85%; /* Light Border Gray */
-    --ring: 220 70% 50%; /* Cool Blue */
-    --radius: 0.5rem;
+    /* Modern Apple/Google inspired palette - Light mode */
+    --background: 0 0% 99%; /* Pure white with slight warmth */
+    --foreground: 225 15% 15%; /* Deeper charcoal */
+    --card: 0 0% 100%; /* Pure white */
+    --card-foreground: 225 15% 15%; /* Deeper charcoal */
+    --popover: 0 0% 100%; /* Pure white */
+    --popover-foreground: 225 15% 15%; /* Deeper charcoal */
 
-    /* Simplified sidebar variables */
-    --sidebar: 220 10% 98%; /* Very Light Cool Gray */
-    --sidebar-foreground: 220 13% 20%; /* Dark Cool Gray */
-    --sidebar-primary: 220 70% 50%; /* Cool Blue */
+    /* Modern blue system (Apple-inspired) */
+    --primary: 213 90% 55%; /* Vibrant system blue */
+    --primary-foreground: 0 0% 100%; /* White */
+
+    --secondary: 210 40% 96%; /* Very light blue-gray */
+    --secondary-foreground: 225 15% 15%; /* Deeper charcoal */
+
+    --muted: 210 40% 94%; /* Light blue-gray */
+    --muted-foreground: 215 16% 47%; /* Medium gray */
+
+    --accent: 213 90% 55%; /* Same as primary for consistency */
+    --accent-foreground: 0 0% 100%; /* White */
+
+    --destructive: 0 84% 60%; /* Modern red */
+    --destructive-foreground: 0 0% 100%; /* White */
+
+    --border: 214 32% 91%; /* Very light border */
+    --input: 214 32% 91%; /* Very light input border */
+    --ring: 213 90% 55%; /* Focus ring matches primary */
+    --radius: 0.75rem; /* Slightly more rounded for modern feel */
+
+    /* Sidebar variables */
+    --sidebar: 210 40% 98%; /* Ultra light background */
+    --sidebar-foreground: 225 15% 15%; /* Deeper charcoal */
+    --sidebar-primary: 213 90% 55%; /* System blue */
     --sidebar-primary-foreground: 0 0% 100%; /* White */
-    --sidebar-accent: 220 10% 90%; /* Medium Cool Gray */
-    --sidebar-accent-foreground: 220 13% 20%; /* Dark Cool Gray */
-    --sidebar-border: 220 10% 85%; /* Light Border Gray */
-    --sidebar-ring: 220 70% 50%; /* Cool Blue */
+    --sidebar-accent: 210 40% 94%; /* Light blue-gray */
+    --sidebar-accent-foreground: 225 15% 15%; /* Deeper charcoal */
+    --sidebar-border: 214 32% 91%; /* Very light border */
+    --sidebar-ring: 213 90% 55%; /* System blue */
   }
 
   .dark {
-    --background: 220 13% 10%; /* Darkest Cool Blue/Gray */
-    --foreground: 0 0% 98%; /* Almost White */
-    --card: 220 13% 15%; /* Dark Cool Blue/Gray */
-    --card-foreground: 0 0% 98%; /* Almost White */
-    --popover: 220 13% 15%; /* Dark Cool Blue/Gray */
-    --popover-foreground: 0 0% 98%; /* Almost White */
-    --primary: 220 70% 60%; /* Brighter Cool Blue for Dark Mode */
-    --primary-foreground: 220 13% 10%; /* Darkest Cool Blue/Gray */
-    --secondary: 220 13% 25%; /* Medium Dark Cool Blue/Gray */
-    --secondary-foreground: 0 0% 98%; /* Almost White */
-    --muted: 220 13% 20%; /* Darker Cool Blue/Gray */
-    --muted-foreground: 220 10% 65%; /* Lighter Medium Cool Gray */
-    --accent: 220 70% 60%; /* Brighter Cool Blue for Dark Mode */
-    --accent-foreground: 220 13% 10%; /* Darkest Cool Blue/Gray */
-    --destructive: 0 70% 60%; /* Brighter Red for Dark Mode */
-    --destructive-foreground: 220 13% 10%; /* Darkest Cool Blue/Gray */
-    --border: 220 13% 30%; /* Dark Border Gray */
-    --input: 220 13% 30%; /* Dark Border Gray */
-    --ring: 220 70% 60%; /* Brighter Cool Blue for Dark Mode */
+    /* Modern dark mode palette */
+    --background: 224 71% 4%; /* Very dark blue-black */
+    --foreground: 210 40% 98%; /* Almost white */
+    --card: 224 71% 6%; /* Slightly lighter dark */
+    --card-foreground: 210 40% 98%; /* Almost white */
+    --popover: 224 71% 6%; /* Slightly lighter dark */
+    --popover-foreground: 210 40% 98%; /* Almost white */
 
-    /* Simplified sidebar variables for dark mode */
-    --sidebar: 220 13% 12%; /* Slightly Lighter Darkest Cool Blue/Gray */
-    --sidebar-foreground: 0 0% 98%; /* Almost White */
-    --sidebar-primary: 220 70% 60%; /* Brighter Cool Blue */
-    --sidebar-primary-foreground: 220 13% 10%; /* Darkest Cool Blue/Gray */
-    --sidebar-accent: 220 13% 20%; /* Darker Cool Blue/Gray */
-    --sidebar-accent-foreground: 0 0% 98%; /* Almost White */
-    --sidebar-border: 220 13% 30%; /* Dark Border Gray */
+    /* Adjusted primary for dark mode */
+    --primary: 213 90% 65%; /* Brighter blue for contrast */
+    --primary-foreground: 224 71% 4%; /* Dark background */
+
+    --secondary: 217 32% 17%; /* Dark blue-gray */
+    --secondary-foreground: 210 40% 98%; /* Almost white */
+
+    --muted: 217 32% 15%; /* Darker blue-gray */
+    --muted-foreground: 215 20% 65%; /* Light gray */
+
+    --accent: 213 90% 65%; /* Brighter blue for contrast */
+    --accent-foreground: 224 71% 4%; /* Dark background */
+
+    --destructive: 0 84% 65%; /* Brighter red for dark mode */
+    --destructive-foreground: 224 71% 4%; /* Dark background */
+
+    --border: 217 32% 20%; /* Dark border */
+    --input: 217 32% 20%; /* Dark input border */
+    --ring: 213 90% 65%; /* Bright focus ring */
+
+    /* Dark sidebar variables */
+    --sidebar: 224 71% 5%; /* Slightly different from background */
+    --sidebar-foreground: 210 40% 98%; /* Almost white */
+    --sidebar-primary: 213 90% 65%; /* Bright blue */
+    --sidebar-primary-foreground: 224 71% 4%; /* Dark background */
+    --sidebar-accent: 217 32% 15%; /* Darker blue-gray */
+    --sidebar-accent-foreground: 210 40% 98%; /* Almost white */
+    --sidebar-border: 217 32% 20%; /* Dark border */
   }
 }
 
@@ -105,10 +121,15 @@
 
 body {
   @apply bg-background text-foreground;
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  line-height: 1.6;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-size: 16px;
+  letter-spacing: -0.011em; /* Slightly tighter for modern feel */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   scroll-behavior: smooth;
 }
 
@@ -176,7 +197,11 @@ body {
 .prose h1 {
   font-size: 2.25rem;
   font-weight: 700;
-  background: linear-gradient(to right, hsl(var(--foreground)), hsl(var(--muted-foreground)));
+  background: linear-gradient(
+    to right,
+    hsl(var(--foreground)),
+    hsl(var(--muted-foreground))
+  );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -275,7 +300,7 @@ body {
 }
 
 .prose a::after {
-  content: '';
+  content: "";
   position: absolute;
   width: 0;
   height: 2px;
@@ -373,9 +398,11 @@ body {
 
 .card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .dark .card-hover:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.2);
 }
