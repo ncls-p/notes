@@ -45,7 +45,7 @@ export default function NoteEditor() {
   const params = useParams();
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  const { theme: appTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const noteId = params.noteId as string;
 
   const [note, setNote] = useState<Note | null>(null);
@@ -478,7 +478,7 @@ export default function NoteEditor() {
                       markdownExtension && markdownExtension(),
                       EditorView.lineWrapping,
                     ].filter(Boolean)}
-                    theme={appTheme === "dark" ? "dark" : "light"}
+                    theme={resolvedTheme === "dark" ? "dark" : "light"}
                     placeholder="Start writing your note in Markdown..."
                     className="min-h-[calc(100vh-300px)]"
                     height="calc(100vh - 300px)"
