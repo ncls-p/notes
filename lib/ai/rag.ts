@@ -256,20 +256,27 @@ export async function searchSimilarChunks(
     const queryVector = queryEmbeddings[0];
 
     // Build the SQL query with permission filtering
-    const whereClause = `
-      nc.note_id IN (
-        SELECT n.id FROM notes n
-        WHERE n.owner_id = $1
-        ${noteIds ? `AND n.id = ANY($${noteIds ? 3 : 2})` : ""}
-      )
-    `;
-
     const params: any[] = [userId];
     let paramIndex = 2;
+    let whereClause;
 
-    if (noteIds) {
+    if (noteIds && noteIds.length > 0) {
+      whereClause = `
+        nc.note_id IN (
+          SELECT n.id FROM notes n
+          WHERE n.owner_id = $1
+          AND n.id = ANY($${paramIndex})
+        )
+      `;
       params.push(noteIds);
       paramIndex++;
+    } else {
+      whereClause = `
+        nc.note_id IN (
+          SELECT n.id FROM notes n
+          WHERE n.owner_id = $1
+        )
+      `;
     }
 
     params.push(limit);
