@@ -1,0 +1,39 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Notebook base -->
+  <rect x="6" y="4" width="20" height="24" rx="2" fill="url(#noteGradient)" stroke="url(#borderGradient)" stroke-width="1"/>
+  
+  <!-- Notebook spiral binding -->
+  <rect x="3" y="6" width="2" height="1.5" rx="1" fill="#64748b"/>
+  <rect x="3" y="9" width="2" height="1.5" rx="1" fill="#64748b"/>
+  <rect x="3" y="12" width="2" height="1.5" rx="1" fill="#64748b"/>
+  <rect x="3" y="15" width="2" height="1.5" rx="1" fill="#64748b"/>
+  <rect x="3" y="18" width="2" height="1.5" rx="1" fill="#64748b"/>
+  <rect x="3" y="21" width="2" height="1.5" rx="1" fill="#64748b"/>
+  <rect x="3" y="24" width="2" height="1.5" rx="1" fill="#64748b"/>
+
+  <!-- Stylized "N" -->
+  <path d="M10 11 L10 19 L11.5 19 L11.5 15 L18 19 L18 11 L16.5 11 L16.5 15 L10 11 Z" fill="url(#textGradient)"/>
+  
+  <!-- Accent lines -->
+  <rect x="10" y="21" width="12" height="1" rx="0.5" fill="#94a3b8"/>
+  <rect x="10" y="23" width="9" height="0.8" rx="0.4" fill="#cbd5e1"/>
+
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="noteGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgb(99 102 241)" stop-opacity="0.1"/>
+      <stop offset="50%" stop-color="rgb(168 85 247)" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="rgb(236 72 153)" stop-opacity="0.1"/>
+    </linearGradient>
+    <linearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgb(99 102 241)" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="rgb(168 85 247)" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="rgb(236 72 153)" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgb(99 102 241)"/>
+      <stop offset="50%" stop-color="rgb(168 85 247)"/>
+      <stop offset="100%" stop-color="rgb(236 72 153)"/>
+    </linearGradient>
+  </defs>
+</svg>

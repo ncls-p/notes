@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { NoteworthyLogo } from "@/components/NoteworthyLogo";
 import {
   Card,
   CardContent,
@@ -67,22 +68,7 @@ export default function HomePage() {
           <div className="flex justify-center items-center mb-8">
             <div className="relative animate-bounce-subtle">
               <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-xl">
-                <svg
-                  width="40"
-                  height="40"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="text-white"
-                >
-                  <path
-                    d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <NoteworthyLogo size={48} className="text-white" />
               </div>
               <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-primary animate-pulse" />
             </div>

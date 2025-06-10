@@ -18,6 +18,13 @@ export const metadata: Metadata = {
   title: "Noteworthy - Your AI-Powered Knowledge Hub",
   description:
     "Self-hosted, privacy-focused note-taking application with AI capabilities. Take control of your notes, your data, and your AI.",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" }
+    ],
+    apple: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
