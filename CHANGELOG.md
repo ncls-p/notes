@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0-alpha.1] - 2025-06-10
+
+### Added
+
+- **Complete AI Integration Suite (Implements AI features from DAT.md):**
+  - **AI Configuration Management:**
+    - AI configuration API endpoints (`/api/ai-configs`) for managing multiple AI providers
+    - Support for OpenAI, Ollama, Azure OpenAI, and custom OpenAI-compatible providers
+    - Encrypted API key storage using AES-256-GCM encryption
+    - AI configuration UI at `/ai-config` for managing provider settings
+    - Connection testing functionality for validating AI configurations
+  - **Retrieval-Augmented Generation (RAG) System:**
+    - Document chunking and embedding generation for notes using Langchain.js
+    - Vector storage using PostgreSQL with pgvector extension
+    - Automatic note indexing on creation and updates
+    - AI chat API endpoint (`/api/ai/chat`) with contextual note search
+    - Vector similarity search with configurable thresholds
+  - **AI Chat Interface:**
+    - Interactive AI chat component available on dashboard and note editor
+    - Context-aware responses using relevant note content
+    - Chat history and conversation continuity
+    - Source attribution showing which notes informed the response
+  - **Voice Recording and Transcription:**
+    - Browser-based voice recording using MediaRecorder API
+    - Voice transcription API endpoint (`/api/ai/transcribe`) supporting multiple providers
+    - Automatic note creation from transcribed voice recordings
+    - Voice recorder component integrated into dashboard
+  - **AI Usage Tracking:**
+    - Comprehensive logging of AI API usage (tokens, costs, model usage)
+    - Usage analytics and tracking across different AI operations
+    - Database storage for usage monitoring and cost estimation
+
+### Technical Improvements
+
+- **Dependencies:** Added Langchain.js ecosystem for AI operations (`@langchain/core`, `@langchain/openai`, `@langchain/ollama`, etc.)
+- **Security:** Implemented AES-256-GCM encryption for API key storage with proper key management
+- **Architecture:** Modular AI system with pluggable provider support and configuration management
+- **Database:** Extended schema with `UserAiConfig`, `AiUsageLog`, and `NoteChunk` models for AI functionality
+
+### User Experience
+
+- **Seamless Integration:** AI features accessible through floating chat buttons and dashboard controls
+- **Multi-Provider Support:** Users can configure and switch between different AI providers
+- **Voice-to-Text:** One-click voice note creation with automatic transcription
+- **Contextual AI:** Intelligent responses based on user's actual note content
+
 ## [0.3.2-alpha.1] - 2025-05-25
 
 ### Added

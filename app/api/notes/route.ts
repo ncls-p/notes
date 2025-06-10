@@ -9,6 +9,7 @@ import {
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import prisma from "@/lib/db";
+import { indexNote } from "@/lib/ai/rag";
 
 // Schema for creating a note
 const createNoteSchema = z.object({
@@ -241,6 +242,18 @@ export async function POST(request: NextRequest) {
       title: note.title.substring(0, 50) + "...",
       folderId: note.folderId,
     });
+
+    // Index the note for RAG search (async, don't wait for completion)
+    if (note.contentMarkdown && note.contentMarkdown.trim().length > 0) {
+      indexNote(authResult.userId, note.id, note.contentMarkdown).catch(
+        (error) => {
+          logger.warn(
+            { noteId: note.id, error },
+            "Failed to index note content for RAG",
+          );
+        },
+      );
+    }
 
     logPerformance(logger, "create_note", startTime, {
       noteId: note.id,

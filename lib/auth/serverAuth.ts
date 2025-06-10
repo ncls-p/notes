@@ -127,13 +127,13 @@ export async function verifyJWT(
   }
 }
 
-// Example of a protected API route (not part of this file, just for illustration)
-// import { withAuth, AuthenticatedRequest } from '@/lib/auth/serverAuth';
-// import { NextResponse } from 'next/server';
-//
-// async function myProtectedHandler(req: AuthenticatedRequest, context: { params: Record<string, string | string[]> }) {
-//   // req.user will be available here
-//   return NextResponse.json({ message: `Hello ${req.user?.email}` });
-// }
-//
-// export const GET = withAuth(myProtectedHandler);
+// Helper function to get authenticated user from request - used by AI routes
+export async function getAuthenticatedUser(
+  request: Request,
+): Promise<{ id: string; email: string } | null> {
+  const result = await verifyJWT(request);
+  if (result.success) {
+    return { id: result.userId, email: result.email };
+  }
+  return null;
+}

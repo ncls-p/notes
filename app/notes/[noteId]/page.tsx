@@ -1,5 +1,6 @@
 "use client";
 
+import { AIChat } from "@/components/AIChat";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -130,9 +131,11 @@ export default function NoteEditor() {
       setHasUnsavedChanges(false);
     } catch (err: unknown) {
       console.error("Error saving note:", err);
-      const errorMessage = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error 
-        || (err as { message?: string })?.message 
-        || "Failed to save note";
+      const errorMessage =
+        (err as { response?: { data?: { error?: string } }; message?: string })
+          ?.response?.data?.error ||
+        (err as { message?: string })?.message ||
+        "Failed to save note";
       console.error("Error message:", errorMessage);
       setError(errorMessage);
     } finally {
@@ -560,6 +563,12 @@ export default function NoteEditor() {
           )}
         </div>
       </main>
+
+      {/* AI Chat Component */}
+      <AIChat
+        noteIds={note ? [note.id] : undefined}
+        placeholder="Ask me about this note..."
+      />
     </div>
   );
 }

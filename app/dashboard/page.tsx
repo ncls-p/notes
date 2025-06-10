@@ -2,6 +2,8 @@
 
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NoteworthyLogo } from "@/components/NoteworthyLogo";
+import { AIChat } from "@/components/AIChat";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -22,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import apiClient from "@/lib/apiClient";
 import {
+  Bot,
   ExternalLink,
   FileText,
   Folder,
@@ -503,6 +506,25 @@ export default function Dashboard() {
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* Voice Recorder */}
+          <VoiceRecorder
+            onTranscriptionComplete={(_note) => {
+              loadData(); // Refresh the data after creating a voice note
+            }}
+            defaultFolderId={currentFolderId || undefined}
+            availableFolders={folders.map((f) => ({ id: f.id, name: f.name }))}
+          />
+
+          {/* AI Configuration Link */}
+          <Button
+            variant="outline"
+            onClick={() => window.open("/ai-config", "_blank")}
+            className="smooth-hover"
+          >
+            <Bot className="w-4 h-4 mr-2" />
+            AI Config
+          </Button>
         </div>
 
         <div className="flex items-center space-x-3">
@@ -847,8 +869,7 @@ export default function Dashboard() {
                               {note.title}
                             </h3>
                             <p className="text-sm text-muted-foreground truncate">
-                              {note.content &&
-                              note.content.length > 100
+                              {note.content && note.content.length > 100
                                 ? `${note.content.substring(0, 100)}...`
                                 : note.content || "No content"}
                             </p>
@@ -939,6 +960,12 @@ export default function Dashboard() {
           )}
         </div>
       </main>
+
+      {/* AI Chat Component */}
+      <AIChat
+        noteIds={safeFilteredNotes.map((note) => note.id)}
+        placeholder="Ask me about your notes..."
+      />
     </div>
   );
 }

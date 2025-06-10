@@ -123,7 +123,12 @@ Required environment variables:
 - ✅ Search functionality
 - ✅ Docker deployment setup
 - ✅ Kubernetes Helm chart
+- ✅ AI integration (RAG, voice transcription, chat)
+  - ✅ AI configuration management (OpenAI, Ollama, Azure OpenAI, custom providers)
+  - ✅ Document chunking and vector embeddings for RAG
+  - ✅ AI chat with contextual note search
+  - ✅ Voice recording and transcription to notes
+  - ✅ AI usage tracking and logging
 - 🚧 Real-time collaboration
-- 🚧 AI integration (RAG, voice transcription)
 - 🚧 Advanced permissions system
 - 🚧 Offline mode

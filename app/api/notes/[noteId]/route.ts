@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyJWT } from "@/lib/auth/serverAuth";
 import prisma from "@/lib/db";
+import { indexNote } from "@/lib/ai/rag";
 
 // Schema for updating a note
 const updateNoteSchema = z.object({
@@ -167,6 +168,14 @@ export async function PUT(
         },
       },
     });
+
+    // Re-index the note if content was updated (async, don't wait for completion)
+    if (validatedData.content !== undefined) {
+      const contentToIndex = updatedNote.contentMarkdown || "";
+      indexNote(authResult.userId, noteId, contentToIndex).catch((error) => {
+        console.warn(`Failed to index note ${noteId} for RAG:`, error);
+      });
+    }
 
     return NextResponse.json({
       note: {

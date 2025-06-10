@@ -195,7 +195,10 @@ export default function RegisterPage() {
           <CardHeader className="space-y-6 text-center pb-8">
             <div className="flex justify-center items-center">
               <div className="relative animate-float">
-                <NoteworthyLogo size={64} className="text-primary drop-shadow-lg" />
+                <NoteworthyLogo
+                  size={64}
+                  className="text-primary drop-shadow-lg"
+                />
                 <Sparkles className="absolute -top-1 -right-1 w-5 h-5 text-yellow-400 animate-pulse" />
               </div>
             </div>

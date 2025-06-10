@@ -3,7 +3,10 @@ interface NoteworthyLogoProps {
   className?: string;
 }
 
-export function NoteworthyLogo({ size = 40, className = "" }: NoteworthyLogoProps) {
+export function NoteworthyLogo({
+  size = 40,
+  className = "",
+}: NoteworthyLogoProps) {
   return (
     <svg
       width={size}
@@ -24,7 +27,7 @@ export function NoteworthyLogo({ size = 40, className = "" }: NoteworthyLogoProp
         stroke="url(#borderGradient)"
         strokeWidth="1.5"
       />
-      
+
       {/* Notebook spiral binding */}
       <rect
         x="4"
@@ -86,7 +89,7 @@ export function NoteworthyLogo({ size = 40, className = "" }: NoteworthyLogoProp
         d="M14 16 L14 28 L16 28 L16 22 L26 28 L26 16 L24 16 L24 22 L14 16 Z"
         fill="url(#textGradient)"
       />
-      
+
       {/* Accent lines representing text content */}
       <rect
         x="14"
