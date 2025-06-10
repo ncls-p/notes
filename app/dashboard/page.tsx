@@ -49,7 +49,7 @@ interface Folder {
 interface Note {
   id: string;
   title: string;
-  contentMarkdown: string | null;
+  content: string | null;
   folderId: string | null;
   folder?: { id: string; name: string } | null;
   createdAt: string;
@@ -61,7 +61,7 @@ interface SearchResult {
   type: "folder" | "note";
   name: string;
   title?: string;
-  contentMarkdown?: string | null;
+  content?: string | null;
   path: string;
   folderId: string | null;
   folder?: { id: string; name: string } | null;
@@ -266,7 +266,7 @@ export default function Dashboard() {
         method: "POST",
         body: {
           title: newNoteTitle,
-          contentMarkdown: "",
+          content: "",
           folderId: currentFolderId,
         },
       });
@@ -835,7 +835,7 @@ export default function Dashboard() {
                             }
                           >
                             <p className="text-sm text-muted-foreground truncate h-10 leading-5 mb-2">
-                              {note.contentMarkdown || (
+                              {note.content || (
                                 <span className="italic">No content</span>
                               )}
                             </p>
@@ -866,10 +866,10 @@ export default function Dashboard() {
                               {note.title}
                             </h3>
                             <p className="text-sm text-muted-foreground truncate">
-                              {note.contentMarkdown &&
-                              note.contentMarkdown.length > 100
-                                ? `${note.contentMarkdown.substring(0, 100)}...`
-                                : note.contentMarkdown || "No content"}
+                              {note.content &&
+                              note.content.length > 100
+                                ? `${note.content.substring(0, 100)}...`
+                                : note.content || "No content"}
                             </p>
                             {isSearchMode && "path" in note && (
                               <p className="text-xs text-muted-foreground">

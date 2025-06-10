@@ -98,7 +98,9 @@ export async function PUT(
     }
 
     const body = await request.json();
+    console.log("PUT request body:", body);
     const validatedData = updateNoteSchema.parse(body);
+    console.log("Validated data:", validatedData);
 
     // If folderId is being changed, verify the new folder exists and belongs to the user
     if (
@@ -179,6 +181,7 @@ export async function PUT(
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error("Validation error updating note:", error.errors);
       return NextResponse.json(
         { error: "Invalid input", details: error.errors },
         { status: 400 },

@@ -34,7 +34,7 @@ const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), {
 interface Note {
   id: string;
   title: string;
-  contentMarkdown: string | null;
+  content: string | null;
   folderId: string | null;
   folder?: { id: string; name: string } | null;
   createdAt: string;
@@ -96,11 +96,11 @@ export default function NoteEditor() {
       const response = await apiClient(`/api/notes/${noteId}`, {
         method: "GET",
       });
-      const noteData = response as Note;
+      const { note: noteData } = response as { note: Note };
 
       setNote(noteData);
       setTitle(noteData.title);
-      setContent(noteData.contentMarkdown || "");
+      setContent(noteData.content || "");
       setHasUnsavedChanges(false);
     } catch (err: unknown) {
       setError(
@@ -122,17 +122,19 @@ export default function NoteEditor() {
       await apiClient(`/api/notes/${noteId}`, {
         method: "PUT",
         body: {
-          title: title.trim() || "Untitled",
-          contentMarkdown: content,
+          title: (title || "").trim() || "Untitled",
+          content: content || "",
         },
       });
 
       setHasUnsavedChanges(false);
     } catch (err: unknown) {
-      setError(
-        (err as { response?: { data?: { error?: string } } })?.response?.data
-          ?.error || "Failed to save note",
-      );
+      console.error("Error saving note:", err);
+      const errorMessage = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error 
+        || (err as { message?: string })?.message 
+        || "Failed to save note";
+      console.error("Error message:", errorMessage);
+      setError(errorMessage);
     } finally {
       setSaving(false);
     }
